@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -68,6 +70,14 @@ public class SessionService {
 
     public Long getCompletedSessions(String lecturerId) {
         return sessionRepository.countByLecturerIdAndStatus(lecturerId, Session.Status.completed);
+    }
+
+    public Map<String, Long> getLecturerKpis(String lecturerId) {
+        Map<String, Long> kpis = new HashMap<>();
+        kpis.put("totalSessions", getTotalSessions(lecturerId));
+        kpis.put("activeSessions", getActiveSessions(lecturerId));
+        kpis.put("completedSessions", getCompletedSessions(lecturerId));
+        return kpis;
     }
 
     @Scheduled(fixedRate = 60000)

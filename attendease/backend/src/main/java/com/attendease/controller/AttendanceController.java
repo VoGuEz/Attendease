@@ -4,8 +4,10 @@ import com.attendease.entity.Attendance;
 import com.attendease.service.AttendanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +34,23 @@ public class AttendanceController {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Attendance>> getUserAttendance(Authentication authentication) {
+        String userId = authentication.getName();
+        List<Attendance> attendance = attendanceService.getUserAttendance(userId);
+        return ResponseEntity.ok(attendance);
+    }
+
+    @GetMapping("/session/{sessionId}/csv")
+    public ResponseEntity<byte[]> exportAttendanceCSV(@PathVariable String sessionId) {
+        String csv = attendanceService.exportAttendanceCSV(sessionId);
+        byte[] csvBytes = csv.getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/csv")
+            .header("Content-Disposition", "attachment; filename=\"attendance-" + sessionId + ".csv\"")
+            .body(csvBytes);
     }
 
     @GetMapping("/session/{sessionId}")

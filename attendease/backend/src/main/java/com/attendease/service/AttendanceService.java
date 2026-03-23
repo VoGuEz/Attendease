@@ -5,6 +5,7 @@ import com.attendease.repository.AttendanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,8 +29,8 @@ public class AttendanceService {
         attendance.setFullname(fullname);
         attendance.setIndexNumber(indexNumber);
         attendance.setLevel(level);
-        attendance.setLatitude(latitude);
-        attendance.setLongitude(longitude);
+        attendance.setLatitude(latitude.floatValue());
+        attendance.setLongitude(longitude.floatValue());
         attendance.setJoinedAt(LocalDateTime.now());
         attendance.setCreatedAt(LocalDateTime.now());
 
@@ -40,7 +41,34 @@ public class AttendanceService {
         return attendanceRepository.findBySessionId(sessionId);
     }
 
+    public List<Attendance> getUserAttendance(String userId) {
+        return attendanceRepository.findByIndexNumber(userId);
+    }
+
+    public String exportAttendanceCSV(String sessionId) {
+        List<Attendance> records = attendanceRepository.findBySessionId(sessionId);
+        StringBuilder csv = new StringBuilder();
+        csv.append("Full Name,Index Number,Level,Latitude,Longitude,Joined At\n");
+        for (Attendance a : records) {
+            csv.append(escape(a.getFullname())).append(",")
+               .append(escape(a.getIndexNumber())).append(",")
+               .append(a.getLevel()).append(",")
+               .append(a.getLatitude()).append(",")
+               .append(a.getLongitude()).append(",")
+               .append(a.getJoinedAt()).append("\n");
+        }
+        return csv.toString();
+    }
+
+    private String escape(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
     public Long getStudentAttendanceCount(String studentId) {
-        return attendanceRepository.findBySessionId(studentId).stream().count();
+        return (long) attendanceRepository.findByIndexNumber(studentId).size();
     }
 }

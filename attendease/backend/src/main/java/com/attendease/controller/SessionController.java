@@ -35,10 +35,22 @@ public class SessionController {
         return ResponseEntity.ok(sessions);
     }
 
-    @GetMapping("/{code}")
+    @GetMapping("/code/{code}")
     public ResponseEntity<Session> getSessionByCode(@PathVariable String code) {
         Session session = sessionService.getSessionByCode(code);
         return ResponseEntity.ok(session);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Session> getSessionById(@PathVariable String id) {
+        Session session = sessionService.getSessionById(id);
+        return ResponseEntity.ok(session);
+    }
+
+    @GetMapping("/kpis/lecturer")
+    public ResponseEntity<?> getLecturerKpis(Authentication authentication) {
+        String lecturerId = authentication.getName();
+        return ResponseEntity.ok(sessionService.getLecturerKpis(lecturerId));
     }
 
     @PutMapping("/{id}/end")

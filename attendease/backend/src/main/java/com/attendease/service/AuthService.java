@@ -41,7 +41,7 @@ public class AuthService {
 
     public Map<String, Object> login(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
-        
+
         if (userOpt.isEmpty() || !passwordEncoder.matches(password, userOpt.get().getPasswordHash())) {
             throw new RuntimeException("Invalid email or password");
         }
@@ -57,5 +57,14 @@ public class AuthService {
         response.put("role", user.getRole().toString());
 
         return response;
+    }
+
+    public User getUserById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    }
+
+    public void updateUser(User user) {
+        userRepository.save(user);
     }
 }

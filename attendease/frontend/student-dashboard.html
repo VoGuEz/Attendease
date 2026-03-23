@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendEase | Student Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' font-size='50' dominant-baseline='middle'>📖</text></svg>">
+</head>
+<body>
+    <header>
+        <div>
+            <h2>Student Dashboard</h2>
+            <div class="user-info">
+                <span id="userEmail"></span>
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="theme-switcher">
+                <button class="theme-btn" data-theme-btn="system" title="System">🖥️</button>
+                <button class="theme-btn active" data-theme-btn="dark" title="Dark">🌙</button>
+                <button class="theme-btn" data-theme-btn="light" title="Light">☀️</button>
+            </div>
+            <a href="profile.html" style="color: var(--primary-color);">👤 Profile</a>
+            <button id="logoutBtn" class="btn-secondary">Sign Out</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Location Status -->
+            <div id="locationStatus" class="location-indicator hidden">📍 Location enabled</div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card highlight">
+                    <div class="icon">✅</div>
+                    <div class="label">Attended</div>
+                    <div class="value" id="kpiAttended">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">⏱️</div>
+                    <div class="label">Total Sessions</div>
+                    <div class="value" id="kpiTotalSessions">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">📈</div>
+                    <div class="label">Attendance Rate</div>
+                    <div class="value" id="kpiAttendanceRate">0%</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="card">
+                <h4>Overall Progress</h4>
+                <div style="background: var(--border-color); height: 20px; border-radius: 10px; overflow: hidden; margin-top: 10px;">
+                    <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); transition: width 1s ease-out;"></div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-top: 12px; transition: color 0.3s ease;">
+                    <span id="progressText">Great attendance! Keep it up!</span>
+                </p>
+            </div>
+
+            <!-- Join Session Card -->
+            <div class="card">
+                <h3>Join Session</h3>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                    Enter the session code provided by your lecturer
+                </p>
+                <form onsubmit="handleJoinSession(event)">
+                    <div class="form-group">
+                        <input type="text" id="sessionCode" placeholder="Enter session code (e.g., ABC123)" maxlength="6" style="text-transform: uppercase;" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Join Session</button>
+                </form>
+                <div id="joinSessionMessage" class="form-message"></div>
+            </div>
+
+            <!-- Attendance History -->
+            <div class="card">
+                <h3>My Attendance History</h3>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>Index No</th>
+                                <th>Level</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Joined At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--text-secondary);">No attendance records yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Join Session Modal -->
+    <div class="modal" id="attendanceModal">
+        <div class="modal-content">
+            <h3>Submit Attendance</h3>
+            <form onsubmit="handleSubmitAttendance(event)">
+                <div class="form-group">
+                    <input type="text" id="attFullName" placeholder="Full Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="attIndexNumber" placeholder="Index Number" required>
+                </div>
+                <div class="form-group">
+                    <select id="attLevel" required>
+                        <option value="">Select Level</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                        <option value="300">300</option>
+                        <option value="400">400</option>
+                    </select>
+                </div>
+                <div id="attMessage" class="form-message"></div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" onclick="closeAttendanceModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">Submit Attendance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/theme.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/gps.js"></script>
+    <script>
+        // Check authentication
+        console.log('=== STUDENT DASHBOARD LOADING ===');
+        const token = localStorage.getItem('token');
+        const currentUserStr = localStorage.getItem('currentUser');
+        
+        console.log('Token exists:', !!token);
+        console.log('User exists:', !!currentUserStr);
+
+        if (!token || !currentUserStr) {
+            console.log('❌ No authentication found, redirecting to login...');
+            window.location.href = 'login.html';
+        }
+
+        initTheme();
+
+        let currentSessionCode = null;
+        let currentLocation = null;
+
+        // Initialize
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            console.log('Logging out...');
+            clearAuthToken();
+            window.location.href = 'login.html';
+        });
+
+        window.addEventListener('load', async () => {
+            try {
+                console.log('Dashboard load event triggered');
+                const profile = await getProfile();
+                console.log('Profile loaded:', profile);
+                document.getElementById('userEmail').textContent = profile.email;
+                await loadKPIs();
+                await loadAttendanceHistory();
+                
+                if (isLocationEnabled()) {
+                    document.getElementById('locationStatus').classList.remove('hidden');
+                }
+                console.log('✅ Dashboard fully loaded');
+            } catch (error) {
+                console.error('❌ Load error:', error);
+                alert('Error loading dashboard: ' + error.message);
+                clearAuthToken();
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadKPIs() {
+            try {
+                console.log('📊 Loading KPIs...');
+                const kpis = await getStudentKpis();
+                console.log('KPIs received:', kpis);
+                
+                // Update KPI values
+                const attendedEl = document.getElementById('kpiAttended');
+                const totalEl = document.getElementById('kpiTotalSessions');
+                const rateEl = document.getElementById('kpiAttendanceRate');
+                
+                const oldAttended = parseInt(attendedEl.textContent) || 0;
+                const oldTotal = parseInt(totalEl.textContent) || 0;
+                const oldRate = parseInt(rateEl.textContent) || 0;
+                
+                // Animate if changed
+                if (oldAttended !== kpis.attended) {
+                    animateKpiUpdate('kpiAttended', kpis.attended || 0);
+                }
+                if (oldTotal !== kpis.totalSessions) {
+                    animateKpiUpdate('kpiTotalSessions', kpis.totalSessions || 0);
+                }
+                
+                const newRate = parseInt(kpis.attendanceRate) || 0;
+                rateEl.textContent = kpis.attendanceRate || '0%';
+                
+                // Animate progress bar
+                const progressBar = document.getElementById('progressBar');
+                const currentWidth = parseInt(progressBar.style.width) || 0;
+                
+                console.log(`Progress: ${currentWidth}% → ${newRate}%`);
+                animateProgressBar(currentWidth, newRate, progressBar);
+                
+                // Update progress message based on attendance rate
+                let progressText = 'Great attendance! Keep it up! ✅';
+                let progressColor = '#10b981'; // Green
+                
+                if (newRate < 50) {
+                    progressText = '⚠️ Your attendance is low. Please improve!';
+                    progressColor = '#ef4444'; // Red
+                } else if (newRate < 75) {
+                    progressText = '📈 You could do better with attendance';
+                    progressColor = '#f59e0b'; // Orange
+                } else if (newRate < 100) {
+                    progressText = '✅ Good attendance! Keep improving!';
+                    progressColor = '#3b82f6'; // Blue
+                }
+                
+                const progressTextEl = document.getElementById('progressText');
+                progressTextEl.textContent = progressText;
+                progressTextEl.style.color = progressColor;
+                
+                console.log('Progress updated:', progressText, '| Rate:', newRate + '%');
+            } catch (error) {
+                console.error('KPI error:', error);
+            }
+        }
+
+        // Helper function to animate KPI numbers
+        function animateKpiUpdate(elementId, newValue) {
+            const el = document.getElementById(elementId);
+            const oldValue = parseInt(el.textContent) || 0;
+            
+            if (oldValue === newValue) return;
+            
+            console.log(`Animating ${elementId}: ${oldValue} → ${newValue}`);
+            
+            // Flash effect
+            el.style.transform = 'scale(1.2)';
+            el.style.transition = 'transform 0.3s ease-out';
+            
+            setTimeout(() => {
+                el.textContent = newValue;
+                el.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        // Helper function to animate progress bar
+        function animateProgressBar(fromWidth, toWidth, element) {
+            const duration = 1000; // 1 second animation
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentWidth = fromWidth + (toWidth - fromWidth) * progress;
+                
+                element.style.width = currentWidth + '%';
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    element.style.width = toWidth + '%';
+                }
+            }
+            
+            animate();
+        }
+
+        async function loadAttendanceHistory() {
+            try {
+                console.log('📋 Loading attendance history...');
+                const attendance = await getUserAttendance();
+                console.log('Attendance records:', attendance);
+                
+                const tableBody = document.getElementById('attendanceTableBody');
+                
+                if (attendance.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No attendance records yet</td></tr>';
+                    return;
+                }
+
+                tableBody.innerHTML = attendance.map(a => `
+                    <tr>
+                        <td>${a.sessionId.substring(0, 8)}...</td>
+                        <td>${a.indexNumber}</td>
+                        <td>${a.level}</td>
+                        <td>${a.latitude.toFixed(4)}</td>
+                        <td>${a.longitude.toFixed(4)}</td>
+                        <td>${new Date(a.joinedAt).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('History error:', error);
+            }
+        }
+
+        async function handleJoinSession(e) {
+            e.preventDefault();
+            clearMessage('joinSessionMessage');
+
+            const code = document.getElementById('sessionCode').value.trim().toUpperCase();
+            
+            try {
+                console.log('🔍 Looking for session:', code);
+                const session = await getSessionByCode(code);
+                console.log('Session found:', session);
+                
+                currentSessionCode = code;
+                
+                const location = await getLocation();
+                if (!location) {
+                    showMessage('joinSessionMessage', 'Location required. Please enable GPS/location.', 'error');
+                    return;
+                }
+                currentLocation = location;
+                console.log('Location acquired:', location);
+
+                document.getElementById('attendanceModal').classList.add('show');
+                showMessage('joinSessionMessage', 'Session found! Please provide your details.', 'success');
+            } catch (error) {
+                showMessage('joinSessionMessage', error.message || 'Session not found or expired', 'error');
+            }
+        }
+
+        async function handleSubmitAttendance(e) {
+            e.preventDefault();
+            clearMessage('attMessage');
+
+            if (!currentSessionCode || !currentLocation) {
+                showMessage('attMessage', 'Missing session code or location', 'error');
+                return;
+            }
+
+            const fullname = document.getElementById('attFullName').value;
+            const indexNumber = document.getElementById('attIndexNumber').value;
+            const level = parseInt(document.getElementById('attLevel').value);
+
+            try {
+                console.log('🔄 Submitting attendance...');
+                
+                // Show loading state
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                
+                await joinSession(
+                    currentSessionCode,
+                    fullname,
+                    indexNumber,
+                    level,
+                    currentLocation.latitude,
+                    currentLocation.longitude
+                );
+
+                console.log('✅ Attendance submitted');
+                closeAttendanceModal();
+                
+                // Clear form
+                document.getElementById('attFullName').value = '';
+                document.getElementById('attIndexNumber').value = '';
+                document.getElementById('attLevel').value = '';
+
+                // Show success animation
+                showMessage('joinSessionMessage', '✅ Attendance submitted successfully!', 'success');
+                
+                // Show loading animation
+                document.getElementById('kpiAttended').style.opacity = '0.6';
+                document.getElementById('progressBar').style.opacity = '0.6';
+                
+                console.log('📊 Updating KPIs...');
+                
+                // Wait a moment for backend to update
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Reload attendance history and KPIs
+                console.log('Reloading data...');
+                await loadAttendanceHistory();
+                await loadKPIs();
+                
+                // Remove loading animation
+                document.getElementById('kpiAttended').style.opacity = '1';
+                document.getElementById('progressBar').style.opacity = '1';
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Attendance';
+                
+                console.log('✅ Dashboard updated');
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('attMessage', error.message, 'error');
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Attendance';
+            }
+        }
+
+        function closeAttendanceModal() {
+            document.getElementById('attendanceModal').classList.remove('show');
+        }
+
+        document.getElementById('attendanceModal').addEventListener('click', (e) => {
+            if (e.target.id === 'attendanceModal') {
+                closeAttendanceModal();
+            }
+        });
+    </script>
+</body>
+</html>

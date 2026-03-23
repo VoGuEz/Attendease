@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendEase | Lecturer Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' font-size='50' dominant-baseline='middle'>📖</text></svg>">
+</head>
+<body>
+    <header>
+        <div>
+            <h2>Lecturer Dashboard</h2>
+            <div class="user-info">
+                <span id="userEmail"></span>
+            </div>
+        </div>
+        <div class="right-section">
+            <div class="theme-switcher">
+                <button class="theme-btn" data-theme-btn="system" title="System">🖥️</button>
+                <button class="theme-btn active" data-theme-btn="dark" title="Dark">🌙</button>
+                <button class="theme-btn" data-theme-btn="light" title="Light">☀️</button>
+            </div>
+            <a href="profile.html" style="color: var(--primary-color);">👤 Profile</a>
+            <button id="logoutBtn" class="btn-secondary">Sign Out</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card highlight">
+                    <div class="icon">📊</div>
+                    <div class="label">Total Classes Hosted</div>
+                    <div class="value" id="kpiHosted">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">🟢</div>
+                    <div class="label">Active Sessions</div>
+                    <div class="value" id="kpiActive">0</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="icon">✅</div>
+                    <div class="label">Completed Sessions</div>
+                    <div class="value" id="kpiCompleted">0</div>
+                </div>
+            </div>
+
+            <!-- Host Session Card -->
+            <div class="card">
+                <h3>Host Session</h3>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                    Create a new attendance session for your students
+                </p>
+                <form onsubmit="handleCreateSession(event)">
+                    <div class="form-group">
+                        <input type="text" id="sessionTitle" placeholder="Session Title (e.g., Database Lecture)" required>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Session Duration</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <button type="button" class="preset-btn" data-duration="5">5 min</button>
+                            <button type="button" class="preset-btn" data-duration="10">10 min</button>
+                            <button type="button" class="preset-btn active" data-duration="20">20 min</button>
+                            <button type="button" class="preset-btn" data-duration="custom">Custom</button>
+                        </div>
+                        <div id="customDurationDiv" style="display: none;">
+                            <input type="number" id="customDuration" placeholder="Enter minutes (e.g., 30)" min="1" max="480">
+                        </div>
+                    </div>
+                    <input type="hidden" id="sessionDuration" value="20">
+                    <button type="submit" class="btn-primary">Create Session</button>
+                </form>
+                <div id="hostMessage" class="form-message"></div>
+            </div>
+
+            <!-- Active Session Card -->
+            <div class="card">
+                <h3>Active Session</h3>
+                <div id="activeSessionWrap">
+                    <p style="color: var(--text-secondary); text-align: center;">No active session</p>
+                </div>
+            </div>
+
+            <!-- All Sessions Card -->
+            <div class="card">
+                <h3>📋 All Sessions</h3>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+                    All sessions you have hosted. Completed sessions can be downloaded.
+                </p>
+                <div id="sessionsList"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        // Check authentication
+        console.log('=== LECTURER DASHBOARD LOADING ===');
+        const token = localStorage.getItem('token');
+        const currentUserStr = localStorage.getItem('currentUser');
+        
+        console.log('Token exists:', !!token);
+        console.log('User exists:', !!currentUserStr);
+
+        if (!token || !currentUserStr) {
+            console.log('❌ No authentication found, redirecting to login...');
+            window.location.href = 'login.html';
+        }
+
+        initTheme();
+
+        // Duration preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const duration = btn.dataset.duration;
+                
+                document.querySelectorAll('.preset-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+                
+                const customDiv = document.getElementById('customDurationDiv');
+                if (duration === 'custom') {
+                    customDiv.style.display = 'block';
+                    document.getElementById('customDuration').focus();
+                    document.getElementById('sessionDuration').value = '0';
+                } else {
+                    customDiv.style.display = 'none';
+                    document.getElementById('sessionDuration').value = duration;
+                }
+            });
+        });
+
+        // Set initial value
+        document.getElementById('sessionDuration').value = '20';
+
+        let currentActiveSession = null;
+        let countdownInterval = null;
+
+        // Initialize
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            console.log('Logging out...');
+            clearAuthToken();
+            window.location.href = 'login.html';
+        });
+
+        window.addEventListener('load', async () => {
+            try {
+                console.log('Dashboard load event triggered');
+                const profile = await getProfile();
+                console.log('Profile loaded:', profile);
+                document.getElementById('userEmail').textContent = profile.email;
+                await refreshDashboard();
+                console.log('✅ Dashboard fully loaded');
+            } catch (error) {
+                console.error('❌ Load error:', error);
+                alert('Error loading dashboard: ' + error.message);
+                clearAuthToken();
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function refreshDashboard() {
+            await loadKPIs();
+            await loadSessions();
+            await loadActiveSession();
+        }
+
+        async function loadKPIs() {
+            try {
+                const kpis = await getLecturerKpis();
+                document.getElementById('kpiHosted').textContent = kpis.totalSessions || 0;
+                document.getElementById('kpiActive').textContent = kpis.activeSessions || 0;
+                document.getElementById('kpiCompleted').textContent = kpis.completedSessions || 0;
+            } catch (error) {
+                console.error('KPI error:', error);
+            }
+        }
+
+        async function handleCreateSession(e) {
+            e.preventDefault();
+            clearMessage('hostMessage');
+
+            const title = document.getElementById('sessionTitle').value;
+            let duration = parseInt(document.getElementById('sessionDuration').value || 0);
+            
+            if (duration === 0 || isNaN(duration)) {
+                const customDiv = document.getElementById('customDurationDiv');
+                if (customDiv.style.display !== 'none') {
+                    duration = parseInt(document.getElementById('customDuration').value);
+                }
+            }
+
+            if (!title) {
+                showMessage('hostMessage', 'Session title is required', 'error');
+                return;
+            }
+
+            if (!duration || duration < 1 || duration > 480) {
+                showMessage('hostMessage', 'Duration must be between 1 and 480 minutes', 'error');
+                return;
+            }
+
+            try {
+                const session = await createSession(title, duration);
+                document.getElementById('sessionTitle').value = '';
+                document.getElementById('sessionDuration').value = '20';
+                document.getElementById('customDuration').value = '';
+                document.getElementById('customDurationDiv').style.display = 'none';
+                document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('[data-duration="20"]').classList.add('active');
+                showMessage('hostMessage', `Session created! Code: ${session.sessionCode}`, 'success');
+                await refreshDashboard();
+            } catch (error) {
+                showMessage('hostMessage', error.message, 'error');
+            }
+        }
+
+        async function loadActiveSession() {
+            try {
+                const sessions = await getUserSessions();
+                const active = sessions.find(s => s.status === 'active');
+
+                if (!active) {
+                    document.getElementById('activeSessionWrap').innerHTML = 
+                        '<p style="color: var(--text-secondary); text-align: center;">No active session</p>';
+                    if (countdownInterval) clearInterval(countdownInterval);
+                    currentActiveSession = null;
+                    return;
+                }
+
+                currentActiveSession = active;
+                const attendees = await getSessionAttendance(active.id);
+
+                document.getElementById('activeSessionWrap').innerHTML = `
+                    <div style="margin-bottom: 16px;">
+                        <p><strong>Title:</strong> ${active.title}</p>
+                        <p><strong>Code:</strong> <span style="font-size: 18px; font-weight: bold; color: var(--primary-color);">${active.sessionCode}</span></p>
+                        <p><strong>Status:</strong> <span class="badge active">Active</span></p>
+                        <p><strong>Duration:</strong> <span style="font-weight: bold;">${active.durationMinutes} minutes</span></p>
+                        <p><strong>Time Left:</strong> <span id="countdownText" style="font-weight: bold; color: var(--success-color);">--</span></p>
+                        <p><strong>Students Joined:</strong> <span style="font-weight: bold; color: var(--primary-color);">${attendees.length}</span></p>
+                        <button id="endSessionBtn" class="btn-danger" style="margin-top: 12px;">🛑 End Session Manually</button>
+                    </div>
+                    <h4>Joined Students (${attendees.length})</h4>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Index No</th>
+                                    <th>Level</th>
+                                    <th>Join Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${attendees.length === 0 ? '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No students joined yet</td></tr>' : attendees.map(a => `
+                                    <tr>
+                                        <td>${a.fullname}</td>
+                                        <td>${a.indexNumber}</td>
+                                        <td>${a.level}</td>
+                                        <td>${new Date(a.joinedAt).toLocaleTimeString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                // Add end session button listener
+                const endBtn = document.getElementById('endSessionBtn');
+                endBtn.addEventListener('click', async () => {
+                    try {
+                        console.log('🛑 Manually ending session');
+                        await endSession(active.id);
+                        showMessage('hostMessage', '✅ Session ended successfully!', 'success');
+                        await refreshDashboard();
+                    } catch (error) {
+                        showMessage('hostMessage', error.message, 'error');
+                    }
+                });
+
+                startCountdown(active);
+            } catch (error) {
+                console.error('Active session error:', error);
+            }
+        }
+
+        function startCountdown(session) {
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(async () => {
+                const now = new Date().getTime();
+                const expiry = new Date(session.expiresAt).getTime();
+                const diff = expiry - now;
+
+                const el = document.getElementById('countdownText');
+                if (!el) return;
+
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    el.textContent = 'Expired';
+                    
+                    console.log('⏰ Session time expired - Auto-ending session');
+                    
+                    try {
+                        // Auto-end the session
+                        await endSession(session.id);
+                        console.log('✅ Session auto-ended');
+                        
+                        // Show notification
+                        showMessage('hostMessage', '⏰ Session time expired and has been automatically ended', 'success');
+                        
+                        // Refresh dashboard
+                        setTimeout(() => {
+                            refreshDashboard();
+                        }, 1000);
+                    } catch (error) {
+                        console.error('Error auto-ending session:', error);
+                        showMessage('hostMessage', 'Session expired but could not auto-end', 'error');
+                        refreshDashboard();
+                    }
+                    
+                    return;
+                }
+
+                const mins = Math.floor(diff / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                el.textContent = `${mins}m ${secs}s`;
+                
+                // Warn when less than 1 minute left
+                if (diff < 60000 && diff > 0) {
+                    el.style.color = '#ef4444'; // Red color
+                } else {
+                    el.style.color = 'var(--success-color)';
+                }
+            }, 1000);
+        }
+
+        async function loadSessions() {
+            try {
+                const sessions = await getUserSessions();
+                const box = document.getElementById('sessionsList');
+
+                if (sessions.length === 0) {
+                    box.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No sessions created yet</p>';
+                    return;
+                }
+
+                // Sort by created date (newest first)
+                sessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                box.innerHTML = sessions.map(s => `
+                    <div class="session-card">
+                        <div class="session-header">
+                            <div>
+                                <p style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">${s.title}</p>
+                                <p style="font-size: 12px; color: var(--text-secondary);">Code: <span style="color: var(--primary-color); font-weight: bold;">${s.sessionCode}</span></p>
+                            </div>
+                            <div>
+                                <span class="badge ${s.status}">${s.status}</span>
+                            </div>
+                        </div>
+                        <div class="session-details">
+                            <p>Duration: <strong>${s.durationMinutes} min</strong></p>
+                            <p>Created: <strong>${new Date(s.createdAt).toLocaleString()}</strong></p>
+                        </div>
+                        <div class="session-actions">
+                            ${s.status === 'completed' ? `
+                                <button class="btn-small btn-download" onclick="downloadSessionAttendance('${s.id}', '${s.title}')">
+                                    📥 Download Attendance
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Sessions error:', error);
+            }
+        }
+
+        window.downloadSessionAttendance = async function(sessionId, sessionTitle) {
+            try {
+                console.log('Downloading attendance for session:', sessionId);
+                const attendees = await getSessionAttendance(sessionId);
+                
+                if (attendees.length === 0) {
+                    alert('No attendance records for this session');
+                    return;
+                }
+
+                // Create CSV content
+                let csvContent = 'Session: ' + sessionTitle + '\n';
+                csvContent += 'Date: ' + new Date().toLocaleString() + '\n\n';
+                csvContent += 'Student Name,Index Number,Level,Latitude,Longitude,Join Time\n';
+                
+                attendees.forEach(a => {
+                    csvContent += `"${a.fullname}","${a.indexNumber}",${a.level},${a.latitude.toFixed(7)},${a.longitude.toFixed(7)},"${new Date(a.joinedAt).toLocaleString()}"\n`;
+                });
+
+                // Create blob and download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `attendance_${sessionTitle}_${new Date().getTime()}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log('✅ Download complete');
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Error downloading attendance: ' + error.message);
+            }
+        };
+
+        // Refresh every 10 seconds
+        setInterval(() => {
+            if (currentActiveSession) {
+                loadActiveSession();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

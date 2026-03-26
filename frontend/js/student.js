@@ -76,7 +76,7 @@
   function setLocationEnabled(lat, lng) {
     userLat = lat; userLng = lng;
     if (locIcon) { locIcon.textContent = '✓'; locIcon.className = 'loc-icon loc-on'; }
-    if (locText) locText.textContent = `Location enabled (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    if (locText) locText.textContent = 'Location enabled';
     document.getElementById('requestLocationBtn')?.classList.add('hidden');
   }
 

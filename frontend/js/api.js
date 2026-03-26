@@ -48,20 +48,22 @@ function requireAuth() {
 }
 
 /* ── Mock data (used when backend is unavailable) ── */
+function getTodayDate() { return new Date().toISOString().slice(0, 10); }
+
 const MOCK = {
   studentStats: { attended: 7, total: 10, rate: 70 },
   sessions: [
     { id: 1, courseName: 'Computer Science 101', courseCode: 'CS101',
-      sessionDate: new Date().toISOString().slice(0,10),
+      sessionDate: getTodayDate(),
       startTime: '09:00', endTime: '10:30', status: 'ACTIVE' },
     { id: 2, courseName: 'Mathematics', courseCode: 'MATH201',
-      sessionDate: new Date().toISOString().slice(0,10),
+      sessionDate: getTodayDate(),
       startTime: '11:00', endTime: '12:30', status: 'UPCOMING' },
   ],
   lecturerStats: { hosted: 5, active: 1, completed: 4 },
   lecturerSessions: [
     { id: 1, courseName: 'Computer Science 101', courseCode: 'CS101',
-      sessionDate: new Date().toISOString().slice(0,10),
+      sessionDate: getTodayDate(),
       startTime: '09:00', endTime: '10:30', status: 'ACTIVE',
       attendeeCount: 18 },
     { id: 2, courseName: 'Computer Science 101', courseCode: 'CS101',

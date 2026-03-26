@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,10 +32,13 @@ public class AttendanceService {
         attendanceRepository.findBySessionIdAndStudentId(sessionId, student.getId())
             .ifPresent(a -> { throw new RuntimeException("Already joined this session"); });
 
-        // Determine if LATE (after startTime)
+        // Determine if LATE: compare join time against session date + start time
         Attendance.Status status = Attendance.Status.PRESENT;
-        if (session.getStartTime() != null && LocalTime.now().isAfter(session.getStartTime().plusMinutes(10))) {
-            status = Attendance.Status.LATE;
+        if (session.getStartTime() != null && session.getSessionDate() != null) {
+            LocalDateTime sessionStart = LocalDateTime.of(session.getSessionDate(), session.getStartTime());
+            if (LocalDateTime.now().isAfter(sessionStart.plusMinutes(10))) {
+                status = Attendance.Status.LATE;
+            }
         }
 
         Attendance attendance = Attendance.builder()

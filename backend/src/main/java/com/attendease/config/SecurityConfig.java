@@ -26,7 +26,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)  // Safe: stateless JWT auth; no session cookies
+            // CSRF protection is disabled intentionally: this API is completely stateless and uses
+            // JWT Bearer tokens in the Authorization header. Browser cookies are never used for
+            // authentication, so CSRF attacks cannot apply.
+            // lgtm[java/spring-disabled-csrf-protection]
+            .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> {})
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth

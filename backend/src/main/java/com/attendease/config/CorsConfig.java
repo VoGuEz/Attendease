@@ -12,6 +12,11 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    /**
+     * CORS configuration for local development.
+     * IMPORTANT: Restrict {@code allowedOriginPatterns} to your actual frontend domain(s)
+     * before deploying to any non-local environment to prevent cross-origin misuse.
+     */
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();

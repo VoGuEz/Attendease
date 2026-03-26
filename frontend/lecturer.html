@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase – Lecturer</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <span class="logo-icon">📚</span>
+      <span class="logo-text">AttendEase</span>
+    </div>
+    <div class="header-right">
+      <span class="header-email" id="headerEmail"></span>
+      <button class="icon-btn" id="profileBtn" title="Profile">👤</button>
+      <button class="icon-btn" id="themeToggleBtn" title="Toggle theme">🌙</button>
+      <button class="icon-btn" id="desktopBtn" title="Desktop view">⊞</button>
+      <button class="btn-danger-sm" id="signOutBtn">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Theme dropdown -->
+  <div class="theme-switcher-corner">
+    <div class="theme-dropdown" id="themeDropdown">
+      <button data-theme-val="dark">🌑 Dark</button>
+      <button data-theme-val="light">☀ Light</button>
+      <button data-theme-val="blue">🔵 Blue</button>
+      <button data-theme-val="purple">🟣 Purple</button>
+      <button data-theme-val="ocean">🌊 Ocean</button>
+      <button data-theme-val="forest">🌿 Forest</button>
+      <button data-theme-val="sunset">🌅 Sunset</button>
+    </div>
+  </div>
+
+  <main class="dashboard-main">
+
+    <!-- ── Stats cards ────────────────────────────────── -->
+    <div class="stats-grid">
+      <div class="stat-card stat-blue">
+        <span class="stat-icon">📅</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statHosted">0</span>
+          <span class="stat-label">Classes Hosted</span>
+        </div>
+      </div>
+      <div class="stat-card stat-green">
+        <span class="stat-icon">↗</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statActive">0</span>
+          <span class="stat-label">Active Now</span>
+        </div>
+      </div>
+      <div class="stat-card stat-orange">
+        <span class="stat-icon">⏱</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statCompleted">0</span>
+          <span class="stat-label">Completed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Session Management ─────────────────────────── -->
+    <section class="sessions-section">
+      <div class="section-header">
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="sessions" id="tabSessions">Sessions</button>
+          <button class="tab-btn" data-tab="attendance" id="tabAttendance">Attendance</button>
+        </div>
+        <button class="btn-primary" id="hostSessionBtn">⊕ Host New Session</button>
+      </div>
+
+      <!-- Sessions tab -->
+      <div class="tab-content active" id="tabContentSessions">
+        <h4 class="subsection-title">Past Sessions</h4>
+        <div class="sessions-list" id="sessionsList">
+          <div class="empty-state">
+            <span class="empty-icon">📅</span>
+            <p>No sessions yet — host your first session!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance tab -->
+      <div class="tab-content" id="tabContentAttendance">
+        <h4 class="subsection-title">Attendance Records</h4>
+        <div class="sessions-list" id="attendanceList">
+          <div class="empty-state">
+            <span class="empty-icon">🔖</span>
+            <p>Select a session to view attendance</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Host New Session Modal -->
+  <div class="modal-overlay" id="hostModal" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Host New Session</h3>
+        <button class="modal-close" id="hostModalClose">✕</button>
+      </div>
+      <form id="hostSessionForm" novalidate>
+        <div class="input-group">
+          <span class="input-icon">🔖</span>
+          <select id="courseSelect" required>
+            <option value="">Select Course…</option>
+            <option value="__new__">+ Create new course</option>
+          </select>
+        </div>
+        <!-- New course fields (hidden until selected) -->
+        <div id="newCourseFields" style="display:none">
+          <div class="input-group">
+            <span class="input-icon">📚</span>
+            <input type="text" id="newCourseName" placeholder="Course Name" />
+          </div>
+          <div class="input-group">
+            <span class="input-icon">🔖</span>
+            <input type="text" id="newCourseCode" placeholder="Course Code (e.g. CS101)" />
+          </div>
+        </div>
+        <div class="input-group">
+          <span class="input-icon">📅</span>
+          <input type="date" id="sessionDate" required />
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <span class="input-icon">⏱</span>
+            <input type="time" id="startTime" required />
+          </div>
+          <div class="input-group">
+            <span class="input-icon">⏱</span>
+            <input type="time" id="endTime" required />
+          </div>
+        </div>
+        <div class="error-msg" id="hostErrorMsg"></div>
+        <button type="submit" class="btn-primary full-width">Start Session</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Attendance detail modal -->
+  <div class="modal-overlay" id="attendanceModal" style="display:none">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3 id="attendanceModalTitle">Attendance</h3>
+        <button class="modal-close" id="attendanceModalClose">✕</button>
+      </div>
+      <div id="attendanceModalBody">Loading…</div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/lecturer.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase – Sign In</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+  <!-- theme switcher top-right corner -->
+  <div class="theme-switcher-corner">
+    <button class="theme-btn" id="themeCycleBtn" title="Switch theme">☀</button>
+    <div class="theme-dropdown" id="themeDropdown">
+      <button data-theme-val="dark">🌑 Dark</button>
+      <button data-theme-val="light">☀ Light</button>
+      <button data-theme-val="blue">🔵 Blue</button>
+      <button data-theme-val="purple">🟣 Purple</button>
+      <button data-theme-val="ocean">🌊 Ocean</button>
+      <button data-theme-val="forest">🌿 Forest</button>
+      <button data-theme-val="sunset">🌅 Sunset</button>
+    </div>
+  </div>
+
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">AttendEase</span>
+      </div>
+      <h2 class="auth-title">Welcome back</h2>
+
+      <form id="signinForm" novalidate>
+        <div class="input-group">
+          <span class="input-icon">✉</span>
+          <input type="email" id="email" placeholder="Email Address" required autocomplete="email" />
+        </div>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
+          <button type="button" class="toggle-pw" id="togglePw">👁</button>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        <button type="submit" class="btn-primary" id="submitBtn">Sign In</button>
+      </form>
+
+      <p class="auth-switch">Don't have an account? <a href="index.html">Sign Up</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

@@ -53,8 +53,4 @@ public class AttendanceController {
         return ResponseEntity.ok(attendanceService.getStudentStats(studentId));
     }
 
-    @GetMapping("/progress/{studentId}")
-    public ResponseEntity<StudentStatsDTO> getStudentProgress(@PathVariable Long studentId) {
-        return ResponseEntity.ok(attendanceService.getStudentStats(studentId));
-    }
 }

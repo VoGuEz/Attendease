@@ -18,7 +18,7 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
     Optional<Attendance> findBySessionIdAndStudentId(Long sessionId, Long studentId);
 
-    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student.id = :studentId AND a.status = 'PRESENT'")
+    @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student.id = :studentId AND a.status IN ('PRESENT', 'LATE')")
     long countAttendedByStudentId(@Param("studentId") Long studentId);
 
     @Query("SELECT COUNT(a) FROM Attendance a WHERE a.student.id = :studentId")

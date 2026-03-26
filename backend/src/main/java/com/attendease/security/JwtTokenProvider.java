@@ -1,7 +1,6 @@
 package com.attendease.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,10 +22,8 @@ public class JwtTokenProvider {
     private long expiration;
 
     private Key getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(
-            java.util.Base64.getEncoder().encodeToString(secret.getBytes())
-        );
-        return Keys.hmacShaKeyFor(keyBytes);
+        // Use raw bytes from secret directly to avoid double-encoding issues
+        return Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     public String generateToken(UserDetails userDetails) {

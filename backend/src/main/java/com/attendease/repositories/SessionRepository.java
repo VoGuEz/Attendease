@@ -125,7 +125,16 @@ public class SessionRepository {
         session.setEndTime(rs.getTime("end_time"));
         session.setStatus(rs.getString("status"));
         session.setCreatedAt(rs.getTimestamp("created_at"));
-        try { session.setCourseName(rs.getString("course_name")); } catch (SQLException ignored) {}
+        if (hasColumn(rs, "course_name")) session.setCourseName(rs.getString("course_name"));
         return session;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) {
+        try {
+            rs.findColumn(columnName);
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

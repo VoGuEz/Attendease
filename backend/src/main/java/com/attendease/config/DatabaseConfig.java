@@ -7,11 +7,13 @@ import java.sql.Statement;
 
 public class DatabaseConfig {
 
-    private static final String HOST = "localhost";
-    private static final int PORT = 3306;
-    private static final String DATABASE = "attendease";
-    private static final String USER = "root";
-    private static final String PASSWORD = "";
+    // DB connection settings can be overridden via environment variables for production.
+    // Defaults match a standard XAMPP local setup (root user, no password).
+    private static final String HOST     = System.getenv().getOrDefault("DB_HOST", "localhost");
+    private static final int    PORT     = Integer.parseInt(System.getenv().getOrDefault("DB_PORT", "3306"));
+    private static final String DATABASE = System.getenv().getOrDefault("DB_NAME", "attendease");
+    private static final String USER     = System.getenv().getOrDefault("DB_USER", "root");
+    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "");
 
     private static final String URL = String.format(
             "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",

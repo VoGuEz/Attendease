@@ -132,7 +132,16 @@ public class CourseRepository {
         course.setCourseCode(rs.getString("course_code"));
         course.setDescription(rs.getString("description"));
         course.setCreatedAt(rs.getTimestamp("created_at"));
-        try { course.setLecturerName(rs.getString("lecturer_name")); } catch (SQLException ignored) {}
+        if (hasColumn(rs, "lecturer_name")) course.setLecturerName(rs.getString("lecturer_name"));
         return course;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) {
+        try {
+            rs.findColumn(columnName);
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

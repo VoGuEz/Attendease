@@ -126,7 +126,16 @@ public class AttendanceRepository {
         a.setJoinTime(rs.getTimestamp("join_time"));
         a.setLeaveTime(rs.getTimestamp("leave_time"));
         a.setStatus(rs.getString("status"));
-        try { a.setStudentName(rs.getString("student_name")); } catch (SQLException ignored) {}
+        if (hasColumn(rs, "student_name")) a.setStudentName(rs.getString("student_name"));
         return a;
+    }
+
+    private boolean hasColumn(ResultSet rs, String columnName) {
+        try {
+            rs.findColumn(columnName);
+            return true;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 }

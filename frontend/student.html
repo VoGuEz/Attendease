@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase – Student</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <span class="logo-icon">📚</span>
+      <span class="logo-text">AttendEase</span>
+    </div>
+    <div class="header-right">
+      <span class="header-email" id="headerEmail"></span>
+      <button class="icon-btn" id="profileBtn" title="Profile">👤</button>
+      <button class="icon-btn" id="themeToggleBtn" title="Toggle theme">🌙</button>
+      <button class="icon-btn" id="desktopBtn" title="Desktop view">⊞</button>
+      <button class="btn-danger-sm" id="signOutBtn">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Theme dropdown (shared) -->
+  <div class="theme-switcher-corner">
+    <div class="theme-dropdown" id="themeDropdown">
+      <button data-theme-val="dark">🌑 Dark</button>
+      <button data-theme-val="light">☀ Light</button>
+      <button data-theme-val="blue">🔵 Blue</button>
+      <button data-theme-val="purple">🟣 Purple</button>
+      <button data-theme-val="ocean">🌊 Ocean</button>
+      <button data-theme-val="forest">🌿 Forest</button>
+      <button data-theme-val="sunset">🌅 Sunset</button>
+    </div>
+  </div>
+
+  <main class="dashboard-main">
+
+    <!-- ── Location bar ───────────────────────────────── -->
+    <section class="location-bar" id="locationBar">
+      <div class="location-status" id="locationStatus">
+        <span id="locationIcon" class="loc-icon loc-off">✕</span>
+        <span id="locationText">Location disabled</span>
+      </div>
+      <button class="btn-sm" id="requestLocationBtn">Request Location</button>
+    </section>
+
+    <!-- ── Stats cards ────────────────────────────────── -->
+    <div class="stats-grid">
+      <div class="stat-card stat-blue">
+        <span class="stat-icon">✓</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statAttended">0</span>
+          <span class="stat-label">Attended</span>
+        </div>
+      </div>
+      <div class="stat-card stat-dark">
+        <span class="stat-icon">⏱</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statTotal">0</span>
+          <span class="stat-label">Total Sessions</span>
+        </div>
+      </div>
+      <div class="stat-card stat-dark">
+        <span class="stat-icon">↗</span>
+        <div class="stat-body">
+          <span class="stat-value" id="statRate">0%</span>
+          <span class="stat-label">Attendance Rate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Overall Progress ───────────────────────────── -->
+    <section class="progress-section">
+      <div class="progress-header">
+        <h3>Overall Progress</h3>
+        <span class="progress-ratio" id="progressRatio">0 / 0</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+      <p class="progress-msg" id="progressMsg">🚀 No sessions yet — get started!</p>
+    </section>
+
+    <!-- ── Available Sessions ─────────────────────────── -->
+    <section class="sessions-section">
+      <h3 class="section-title">Available Sessions</h3>
+      <div class="sessions-list" id="sessionsList">
+        <div class="empty-state">
+          <span class="empty-icon">📅</span>
+          <p>No active sessions right now</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Join confirmation modal -->
+  <div class="modal-overlay" id="joinModal" style="display:none">
+    <div class="modal-card">
+      <h3>Join Session</h3>
+      <p id="joinModalMsg">Are you sure you want to join this session?</p>
+      <div class="modal-actions">
+        <button class="btn-outline" id="joinCancelBtn">Cancel</button>
+        <button class="btn-primary" id="joinConfirmBtn">Join ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/student.js"></script>
+</body>
+</html>

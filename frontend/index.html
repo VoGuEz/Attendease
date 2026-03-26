@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase – Sign Up</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+  <!-- theme switcher top-right corner -->
+  <div class="theme-switcher-corner">
+    <button class="theme-btn" id="themeCycleBtn" title="Switch theme">☀</button>
+    <div class="theme-dropdown" id="themeDropdown">
+      <button data-theme-val="dark">🌑 Dark</button>
+      <button data-theme-val="light">☀ Light</button>
+      <button data-theme-val="blue">🔵 Blue</button>
+      <button data-theme-val="purple">🟣 Purple</button>
+      <button data-theme-val="ocean">🌊 Ocean</button>
+      <button data-theme-val="forest">🌿 Forest</button>
+      <button data-theme-val="sunset">🌅 Sunset</button>
+    </div>
+  </div>
+
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">AttendEase</span>
+      </div>
+      <h2 class="auth-title">Create your account</h2>
+
+      <!-- role toggle -->
+      <div class="role-toggle">
+        <button class="role-btn active" data-role="STUDENT" id="roleStudent">👤 Student</button>
+        <button class="role-btn" data-role="LECTURER" id="roleLecturer">🎓 Lecturer</button>
+      </div>
+
+      <form id="signupForm" novalidate>
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input type="text" id="fullName" placeholder="Full Name" required autocomplete="name" />
+        </div>
+        <div class="input-group">
+          <span class="input-icon">✉</span>
+          <input type="email" id="email" placeholder="Email Address" required autocomplete="email" />
+        </div>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="password" placeholder="Password" required autocomplete="new-password" />
+          <button type="button" class="toggle-pw" id="togglePw">👁</button>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        <button type="submit" class="btn-primary" id="submitBtn">Create Account</button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="signin.html">Sign In</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

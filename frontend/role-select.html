@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase – Select Role</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-theme="dark">
+  <div class="auth-container">
+    <div class="auth-card role-card">
+      <div class="auth-logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">AttendEase</span>
+      </div>
+      <h2 class="auth-title">Welcome back!</h2>
+      <p class="auth-subtitle" id="userEmail">Loading…</p>
+      <p class="role-prompt">Continue as:</p>
+
+      <div class="role-options">
+        <div class="role-option-card" id="studentCard">
+          <span class="role-option-icon">👤</span>
+          <span class="role-option-label">Student</span>
+          <span class="role-option-desc">Join sessions &amp; track attendance</span>
+        </div>
+        <div class="role-option-card" id="lecturerCard">
+          <span class="role-option-icon">🎓</span>
+          <span class="role-option-label">Lecturer</span>
+          <span class="role-option-desc">Host sessions &amp; manage courses</span>
+        </div>
+      </div>
+
+      <button class="btn-outline" id="signOutBtn">Sign Out</button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    (function () {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.body.setAttribute('data-theme', theme);
+
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const token = localStorage.getItem('token');
+
+      if (!token) { window.location.href = 'signin.html'; return; }
+
+      document.getElementById('userEmail').textContent = user.email || '';
+
+      document.getElementById('studentCard').addEventListener('click', () => {
+        window.location.href = 'student.html';
+      });
+      document.getElementById('lecturerCard').addEventListener('click', () => {
+        window.location.href = 'lecturer.html';
+      });
+      document.getElementById('signOutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'signin.html';
+      });
+    })();
+  </script>
+</body>
+</html>

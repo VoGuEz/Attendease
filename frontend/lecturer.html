@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecturer Dashboard – AttendEase</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="dashboard.html" class="logo">📚 AttendEase</a>
+    <div class="navbar-right">
+      <span class="user-badge">👨‍🏫 <span id="user-name">...</span></span>
+      <div id="theme-switcher-container"></div>
+      <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul class="sidebar-nav">
+        <li class="active">
+          <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>
+        </li>
+        <li>
+          <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
+        </li>
+        <li>
+          <a href="#" data-section="sessions"><span class="sidebar-icon">📅</span> Sessions</a>
+        </li>
+        <li>
+          <a href="#" data-section="students"><span class="sidebar-icon">👥</span> Students</a>
+        </li>
+        <li>
+          <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+      <!-- OVERVIEW SECTION -->
+      <div id="section-overview" class="section active">
+        <div class="section-header">
+          <h2>Dashboard</h2>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Courses</div>
+            <div class="stat-value" id="stat-courses">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-value" id="stat-sessions">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Sessions</div>
+            <div class="stat-value" id="stat-active-sessions">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value" id="stat-students">–</div>
+          </div>
+        </div>
+
+        <!-- Active sessions panel -->
+        <div class="section-header" style="margin-top: 8px;">
+          <h3>Live Sessions</h3>
+          <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
+        </div>
+        <div class="items-grid" id="active-sessions-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- COURSES SECTION -->
+      <div id="section-courses" class="section">
+        <div class="section-header">
+          <h2>My Courses</h2>
+          <button class="btn" id="create-course-btn">+ New Course</button>
+        </div>
+        <div class="items-grid" id="courses-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- SESSIONS SECTION -->
+      <div id="section-sessions" class="section">
+        <div id="sessions-detail">
+          <div class="empty-state">
+            <div class="empty-icon">📅</div>
+            <h3>Select a course</h3>
+            <p>Go to <strong>My Courses</strong> and click <em>Sessions</em> on a course.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDENTS SECTION -->
+      <div id="section-students" class="section">
+        <div class="section-header">
+          <h2>All Students</h2>
+        </div>
+        <div id="students-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS SECTION -->
+      <div id="section-settings" class="section">
+        <div class="section-header">
+          <h2>Settings</h2>
+        </div>
+        <div class="card" style="max-width: 480px;">
+          <h3 style="margin-bottom: 16px;">Theme</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose your preferred color theme.</p>
+          <div id="settings-theme-switcher"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Account</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
+          <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal: Create Course -->
+  <div class="modal-overlay" id="modal-create-course">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create New Course</h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-create-course">
+        <div class="form-group">
+          <label for="course-name">Course Name *</label>
+          <input type="text" id="course-name" placeholder="e.g. Introduction to Programming" required />
+        </div>
+        <div class="form-group">
+          <label for="course-code">Course Code *</label>
+          <input type="text" id="course-code" placeholder="e.g. CS101" required />
+        </div>
+        <div class="form-group">
+          <label for="course-desc">Description</label>
+          <textarea id="course-desc" placeholder="Brief course description..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close-btn" onclick="closeModal('modal-create-course')">Cancel</button>
+          <button type="submit" class="btn">Create Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Create Session -->
+  <div class="modal-overlay" id="modal-create-session">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Session – <span id="session-course-name-label"></span></h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-create-session">
+        <input type="hidden" id="session-course-id" />
+        <div class="form-group">
+          <label for="session-date">Session Date *</label>
+          <input type="date" id="session-date" required />
+        </div>
+        <div class="form-group">
+          <label for="session-start">Start Time *</label>
+          <input type="time" id="session-start" required />
+        </div>
+        <div class="form-group">
+          <label for="session-end">End Time *</label>
+          <input type="time" id="session-end" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-session')">Cancel</button>
+          <button type="submit" class="btn">Create Session</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/themes.js"></script>
+  <script src="js/lecturer.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getUser();
+      if (user) {
+        const emailEl = document.getElementById('settings-email');
+        if (emailEl) emailEl.textContent = user.email;
+      }
+
+      const settingsContainer = document.getElementById('settings-theme-switcher');
+      if (settingsContainer) {
+        settingsContainer.innerHTML = `
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            ${THEMES.map(t => `
+              <button onclick="applyTheme('${t.id}')" title="${t.label}"
+                style="width:40px;height:40px;border-radius:50%;border:3px solid transparent;cursor:pointer;
+                       background:linear-gradient(135deg,${t.bg} 50%,${t.color} 50%);
+                       transition:transform 0.2s,border-color 0.2s;"
+                onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Close modals on overlay click
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) overlay.classList.remove('open');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

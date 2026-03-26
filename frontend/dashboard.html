@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – AttendEase</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <div class="theme-switcher-corner" id="theme-switcher-container"></div>
+
+  <div class="dashboard-welcome">
+    <div class="welcome-card">
+      <span class="emoji">📚</span>
+      <h1>AttendEase</h1>
+      <p id="welcome-msg">Welcome back!</p>
+
+      <div style="margin-bottom: 24px;">
+        <span class="badge" id="role-badge" style="font-size: 14px; padding: 8px 20px;"></span>
+      </div>
+
+      <div class="welcome-actions">
+        <button class="btn" id="go-dashboard-btn" style="display:none">Go to Dashboard →</button>
+        <button class="btn btn-outline btn-danger" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/themes.js"></script>
+  <script>
+    renderThemeSwitcher('theme-switcher-container');
+
+    const user = requireAuth();
+    if (user) {
+      document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName}!`;
+
+      const badge = document.getElementById('role-badge');
+      if (user.role === 'student') {
+        badge.textContent = '🎓 Student';
+        badge.classList.add('badge-active');
+      } else {
+        badge.textContent = '👨‍🏫 Lecturer';
+        badge.classList.add('badge-upcoming');
+      }
+
+      const btn = document.getElementById('go-dashboard-btn');
+      btn.style.display = 'flex';
+      btn.textContent = user.role === 'student' ? '🎓 Student Dashboard →' : '👨‍🏫 Lecturer Dashboard →';
+      btn.addEventListener('click', () => {
+        window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
+      });
+    }
+  </script>
+</body>
+</html>

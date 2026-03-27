@@ -26,12 +26,18 @@ function setLoading(btn, loading) {
 
 function isValidEmailDomain(email) {
   const pattern = /^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,63}$/;
+  const reservedDomains = new Set(['example.com', 'example.org', 'example.net', 'localhost', 'localdomain']);
+  const reservedSuffixes = ['.example', '.invalid', '.localhost', '.test'];
+
   if (!pattern.test(email)) return false;
 
   const domain = email.split('@')[1]?.toLowerCase();
   if (!domain) return false;
 
   if (domain === 'gmail.com' || domain === 'yahoo.com') return true;
+
+  if (reservedDomains.has(domain)) return false;
+  if (reservedSuffixes.some(suffix => domain.endsWith(suffix))) return false;
 
   return domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.');
 }
@@ -93,7 +99,7 @@ function initSignup() {
     }
 
     if (!isValidEmailDomain(email.toLowerCase())) {
-      showMsg('auth-msg', 'Use a valid email domain (e.g., @gmail.com, @yahoo.com, or another valid domain).', 'error');
+      showMsg('auth-msg', 'Use a real public email domain (e.g., @gmail.com, @yahoo.com, school.edu, or company.com).', 'error');
       return;
     }
 

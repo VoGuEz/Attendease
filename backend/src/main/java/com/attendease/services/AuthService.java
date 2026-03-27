@@ -6,6 +6,7 @@ import com.attendease.utils.JwtUtil;
 import com.attendease.utils.PasswordUtil;
 
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +17,19 @@ public class AuthService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\\.)+[A-Za-z]{2,63}$"
     );
+        private static final Set<String> RESERVED_EMAIL_DOMAINS = Set.of(
+            "example.com",
+            "example.org",
+            "example.net",
+            "localhost",
+            "localdomain"
+        );
+        private static final Set<String> RESERVED_EMAIL_SUFFIXES = Set.of(
+            ".example",
+            ".invalid",
+            ".localhost",
+            ".test"
+        );
 
     private final UserRepository userRepository = new UserRepository();
 
@@ -24,7 +38,7 @@ public class AuthService {
         String normalizedEmail = email.trim().toLowerCase();
         if (!isAllowedEmail(normalizedEmail)) {
             throw new IllegalArgumentException(
-                    "Enter a valid email address (for example @gmail.com, @yahoo.com, or another valid domain)."
+                    "Enter a valid email address with a real public domain (for example @gmail.com, @yahoo.com, school.edu, or company.com)."
             );
         }
         if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
@@ -79,6 +93,16 @@ public class AuthService {
         String domain = email.substring(email.lastIndexOf('@') + 1);
         if ("gmail.com".equals(domain) || "yahoo.com".equals(domain)) {
             return true;
+        }
+
+        if (RESERVED_EMAIL_DOMAINS.contains(domain)) {
+            return false;
+        }
+
+        for (String suffix : RESERVED_EMAIL_SUFFIXES) {
+            if (domain.endsWith(suffix)) {
+                return false;
+            }
         }
 
         // Accept globally valid domain-style emails (e.g., school.edu, company.co.uk).

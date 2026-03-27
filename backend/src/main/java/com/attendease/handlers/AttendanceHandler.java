@@ -40,7 +40,19 @@ public class AttendanceHandler {
                 String body = ResponseUtil.readBody(exchange);
                 JsonObject json = JsonParser.parseString(body).getAsJsonObject();
                 int sessionId = json.get("sessionId").getAsInt();
-                Map<String, Object> result = attendanceService.joinSession(userId, sessionId);
+                String fullName = json.has("fullName") && !json.get("fullName").isJsonNull()
+                    ? json.get("fullName").getAsString() : null;
+                String indexNumber = json.has("indexNumber") && !json.get("indexNumber").isJsonNull()
+                    ? json.get("indexNumber").getAsString() : null;
+                String level = json.has("level") && !json.get("level").isJsonNull()
+                    ? json.get("level").getAsString() : null;
+                Double latitude = json.has("latitude") && !json.get("latitude").isJsonNull()
+                    ? json.get("latitude").getAsDouble() : null;
+                Double longitude = json.has("longitude") && !json.get("longitude").isJsonNull()
+                    ? json.get("longitude").getAsDouble() : null;
+                Map<String, Object> result = attendanceService.joinSession(
+                    userId, sessionId, fullName, indexNumber, level, latitude, longitude
+                );
                 ResponseUtil.sendResponse(exchange, 200, result);
                 return;
             }

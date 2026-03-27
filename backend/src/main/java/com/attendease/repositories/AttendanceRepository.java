@@ -16,12 +16,17 @@ public class AttendanceRepository {
     }
 
     public Attendance save(Attendance attendance) throws SQLException {
-        String sql = "INSERT INTO attendance (session_id, student_id, status) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO attendance (session_id, student_id, status, submitted_full_name, submitted_index_number, submitted_level, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, attendance.getSessionId());
             stmt.setInt(2, attendance.getStudentId());
             stmt.setString(3, attendance.getStatus());
+            stmt.setString(4, attendance.getSubmittedFullName());
+            stmt.setString(5, attendance.getSubmittedIndexNumber());
+            stmt.setString(6, attendance.getSubmittedLevel());
+            stmt.setObject(7, attendance.getLatitude());
+            stmt.setObject(8, attendance.getLongitude());
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
@@ -33,7 +38,7 @@ public class AttendanceRepository {
 
     public List<Attendance> findBySessionId(int sessionId) throws SQLException {
         String sql = """
-            SELECT a.*, u.full_name as student_name
+            SELECT a.*, COALESCE(a.submitted_full_name, u.full_name) as student_name
             FROM attendance a
             JOIN users u ON a.student_id = u.id
             WHERE a.session_id = ?
@@ -127,6 +132,11 @@ public class AttendanceRepository {
         a.setLeaveTime(rs.getTimestamp("leave_time"));
         a.setStatus(rs.getString("status"));
         if (hasColumn(rs, "student_name")) a.setStudentName(rs.getString("student_name"));
+        if (hasColumn(rs, "submitted_full_name")) a.setSubmittedFullName(rs.getString("submitted_full_name"));
+        if (hasColumn(rs, "submitted_index_number")) a.setSubmittedIndexNumber(rs.getString("submitted_index_number"));
+        if (hasColumn(rs, "submitted_level")) a.setSubmittedLevel(rs.getString("submitted_level"));
+        if (hasColumn(rs, "latitude")) a.setLatitude((Double) rs.getObject("latitude"));
+        if (hasColumn(rs, "longitude")) a.setLongitude((Double) rs.getObject("longitude"));
         return a;
     }
 

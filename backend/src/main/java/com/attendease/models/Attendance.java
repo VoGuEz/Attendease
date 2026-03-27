@@ -10,6 +10,11 @@ public class Attendance {
     private Timestamp leaveTime;
     private String status;
     private String studentName;
+    private String submittedFullName;
+    private String submittedIndexNumber;
+    private String submittedLevel;
+    private Double latitude;
+    private Double longitude;
 
     public Attendance() {}
 
@@ -39,4 +44,19 @@ public class Attendance {
 
     public String getStudentName() { return studentName; }
     public void setStudentName(String studentName) { this.studentName = studentName; }
+
+    public String getSubmittedFullName() { return submittedFullName; }
+    public void setSubmittedFullName(String submittedFullName) { this.submittedFullName = submittedFullName; }
+
+    public String getSubmittedIndexNumber() { return submittedIndexNumber; }
+    public void setSubmittedIndexNumber(String submittedIndexNumber) { this.submittedIndexNumber = submittedIndexNumber; }
+
+    public String getSubmittedLevel() { return submittedLevel; }
+    public void setSubmittedLevel(String submittedLevel) { this.submittedLevel = submittedLevel; }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 }

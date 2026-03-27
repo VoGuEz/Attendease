@@ -186,11 +186,22 @@ public class DatabaseConfig {
                     join_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     leave_time TIMESTAMP NULL,
                     status ENUM('present','absent','late') NOT NULL DEFAULT 'present',
+                    submitted_full_name VARCHAR(255) NULL,
+                    submitted_index_number VARCHAR(100) NULL,
+                    submitted_level VARCHAR(50) NULL,
+                    latitude DOUBLE NULL,
+                    longitude DOUBLE NULL,
                     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
                     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE KEY unique_attendance (session_id, student_id)
                 )
                 """);
+
+            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_full_name VARCHAR(255) NULL");
+            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_index_number VARCHAR(100) NULL");
+            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_level VARCHAR(50) NULL");
+            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS latitude DOUBLE NULL");
+            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS longitude DOUBLE NULL");
 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS student_courses (

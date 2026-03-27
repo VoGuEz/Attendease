@@ -200,6 +200,9 @@ async function viewAttendance(sessionId) {
     const rows = records.map(r => `
       <tr>
         <td>${escHtml(r.studentName || 'Unknown')}</td>
+        <td>${escHtml(r.submittedIndexNumber || '')}</td>
+        <td>${escHtml(r.submittedLevel || '')}</td>
+        <td>${formatLocation(r.latitude, r.longitude)}</td>
         <td>${escHtml(r.joinTime || '')}</td>
         <td><span class="badge badge-${r.status === 'present' ? 'active' : r.status === 'late' ? 'upcoming' : 'completed'}">${r.status}</span></td>
       </tr>
@@ -211,7 +214,7 @@ async function viewAttendance(sessionId) {
       </div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>Student</th><th>Join Time</th><th>Status</th></tr></thead>
+          <thead><tr><th>Student</th><th>Index Number</th><th>Level</th><th>GPS Location</th><th>Join Time</th><th>Status</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -234,10 +237,14 @@ function downloadAttendanceCSV(sessionId) {
     return str.includes(',') || str.includes('"') || str.includes('\n')
       ? `"${str.replace(/"/g, '""')}"` : str;
   };
-  const lines = ['Student,Join Time,Status'];
+  const lines = ['Student,Index Number,Level,Latitude,Longitude,Join Time,Status'];
   data.records.forEach(r => {
     lines.push([
       escape(r.studentName || 'Unknown'),
+      escape(r.submittedIndexNumber || ''),
+      escape(r.submittedLevel || ''),
+      escape(r.latitude ?? ''),
+      escape(r.longitude ?? ''),
       escape(r.joinTime || ''),
       escape(r.status || '')
     ].join(','));
@@ -346,6 +353,13 @@ function openModal(id) {
 
 function closeModal(id) {
   document.getElementById(id)?.classList.remove('open');
+}
+
+function formatLocation(latitude, longitude) {
+  if (latitude == null || longitude == null) {
+    return 'Not captured';
+  }
+  return `${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)}`;
 }
 
 function showToast(msg, type = 'success') {

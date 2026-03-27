@@ -1,6 +1,8 @@
 let currentUser = null;
 let allCourses = {};
 let activeSection = 'overview';
+let pendingJoinButton = null;
+let joinLocation = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('student');
@@ -10,6 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderThemeSwitcher('theme-switcher-container');
 
   document.getElementById('logout-btn').addEventListener('click', logout);
+  document.getElementById('join-session-form')?.addEventListener('submit', submitJoinSession);
+  document.getElementById('capture-location-btn')?.addEventListener('click', captureLocation);
 
   document.querySelectorAll('[data-section]').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -64,6 +68,10 @@ async function loadActiveSessions() {
   try {
     const sessions = await apiRequest('/sessions/active');
     renderActiveSessions(sessions || []);
+    const fullContainer = document.getElementById('active-sessions-full');
+    if (fullContainer) {
+      fullContainer.innerHTML = document.getElementById('active-sessions').innerHTML;
+    }
   } catch (err) {
     console.error('Failed to load active sessions:', err);
   }
@@ -129,7 +137,7 @@ function renderActiveSessions(sessions) {
         <span class="badge badge-active">Active</span>
       </div>
       <div class="item-card-footer">
-        <button class="btn btn-sm btn-success" onclick="joinSession(${s.id}, this)">Join Session</button>
+        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">Join Session</button>
       </div>
     </div>
   `).join('');
@@ -150,12 +158,113 @@ async function enrollCourse(courseId, btn) {
   }
 }
 
-async function joinSession(sessionId, btn) {
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
+function openJoinModal(sessionId, btn) {
+  pendingJoinButton = btn;
+  joinLocation = null;
+
+  const modal = document.getElementById('modal-join-session');
+  const form = document.getElementById('join-session-form');
+  const fullNameInput = document.getElementById('join-full-name');
+  const sessionInput = document.getElementById('join-session-id');
+  const msg = document.getElementById('join-session-msg');
+  const locationStatus = document.getElementById('join-location-status');
+
+  form?.reset();
+  if (fullNameInput) {
+    fullNameInput.value = currentUser?.fullName || '';
+  }
+  if (sessionInput) {
+    sessionInput.value = String(sessionId);
+  }
+  if (msg) {
+    msg.style.display = 'none';
+    msg.textContent = '';
+  }
+  if (locationStatus) {
+    locationStatus.textContent = 'Location not captured yet.';
+  }
+  modal?.classList.add('open');
+}
+
+function closeJoinModal() {
+  document.getElementById('modal-join-session')?.classList.remove('open');
+  joinLocation = null;
+  pendingJoinButton = null;
+}
+
+async function captureLocation() {
+  const statusEl = document.getElementById('join-location-status');
+  if (!navigator.geolocation) {
+    showJoinMessage('Geolocation is not supported on this device/browser.', 'error');
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = 'Capturing current location...';
+
   try {
-    const result = await apiRequest('/attendance/join', 'POST', { sessionId });
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      });
+    });
+
+    joinLocation = {
+      latitude: Number(position.coords.latitude.toFixed(6)),
+      longitude: Number(position.coords.longitude.toFixed(6))
+    };
+
+    if (statusEl) {
+      statusEl.textContent = `Captured: ${joinLocation.latitude}, ${joinLocation.longitude}`;
+    }
+    showJoinMessage('Location captured successfully.', 'success');
+  } catch (err) {
+    if (statusEl) statusEl.textContent = 'Location not captured yet.';
+    showJoinMessage('Allow location access to join this session.', 'error');
+  }
+}
+
+async function submitJoinSession(e) {
+  e.preventDefault();
+
+  const sessionId = Number(document.getElementById('join-session-id')?.value);
+  const fullName = document.getElementById('join-full-name')?.value.trim() || '';
+  const indexNumber = document.getElementById('join-index-number')?.value.trim() || '';
+  const level = document.getElementById('join-level')?.value.trim() || '';
+  const submitBtn = document.getElementById('join-session-submit-btn');
+  const buttonsToUpdate = Array.from(document.querySelectorAll(`[data-session-id="${sessionId}"]`));
+
+  if (!fullName || !indexNumber || !level) {
+    showJoinMessage('Full name, index number, and level are all required.', 'error');
+    return;
+  }
+
+  if (!joinLocation) {
+    showJoinMessage('Capture your GPS location before joining the session.', 'error');
+    return;
+  }
+
+  buttonsToUpdate.forEach(button => {
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner"></span>';
+  });
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span>';
+  }
+
+  try {
+    const result = await apiRequest('/attendance/join', 'POST', {
+      sessionId,
+      fullName,
+      indexNumber,
+      level,
+      latitude: joinLocation.latitude,
+      longitude: joinLocation.longitude
+    });
     showToast('Joined session successfully!', 'success');
+    closeJoinModal();
 
     const stats = result.stats;
     if (stats) {
@@ -166,15 +275,30 @@ async function joinSession(sessionId, btn) {
       document.getElementById('overall-progress-label').textContent = pct + '% attendance';
     }
 
-    const card = document.getElementById(`session-card-${sessionId}`);
-    if (card) {
-      card.querySelector('.item-card-footer').innerHTML = '<span class="badge badge-active">✓ Joined</span>';
-    }
+    document.querySelectorAll(`#session-card-${sessionId} .item-card-footer`).forEach(footer => {
+      footer.innerHTML = '<span class="badge badge-active">✓ Joined</span>';
+    });
   } catch (err) {
     showToast(err.message, 'error');
-    btn.disabled = false;
-    btn.innerHTML = 'Join Session';
+    showJoinMessage(err.message, 'error');
+    buttonsToUpdate.forEach(button => {
+      button.disabled = false;
+      button.innerHTML = 'Join Session';
+    });
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Join Session';
+    }
   }
+}
+
+function showJoinMessage(message, type) {
+  const el = document.getElementById('join-session-msg');
+  if (!el) return;
+  el.textContent = message;
+  el.style.display = 'block';
+  el.style.color = type === 'error' ? 'var(--danger)' : 'var(--success)';
 }
 
 async function viewCourseSessions(courseId, courseName) {

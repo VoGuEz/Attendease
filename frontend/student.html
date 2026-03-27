@@ -110,7 +110,15 @@
           <h3>Active Sessions</h3>
           <a href="#" class="btn btn-sm btn-outline" data-section="active">View all</a>
         </div>
-        <div class="items-grid" id="active-sessions" style="margin-bottom: 32px">
+        <div class="items-grid" id="active-sessions" style="margin-bottom: 32px; display: none;">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+
+        <!-- All Sessions from Enrolled Courses -->
+        <div class="section-header">
+          <h3>📡 Sessions to Join</h3>
+        </div>
+        <div class="items-grid" id="all-available-sessions" style="margin-bottom: 32px">
           <div class="loading-overlay"><span class="spinner"></span></div>
         </div>
       </div>

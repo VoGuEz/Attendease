@@ -60,8 +60,73 @@ function closeMobileMenu() {
 
 async function loadAll() {
   showLoading('overview-stats', true);
-  await Promise.all([loadStats(), loadCourses(), loadActiveSessions()]);
+  await Promise.all([loadStats(), loadCourses(), loadActiveSessions(), loadAllAvailableSessions()]);
   showLoading('overview-stats', false);
+}
+
+async function loadAllAvailableSessions() {
+  try {
+    const data = await apiRequest('/courses');
+    const enrolledCourses = data.enrolled || [];
+    
+    // Fetch all sessions for each enrolled course
+    const sessionsByDate = {};
+    
+    for (const course of enrolledCourses) {
+      try {
+        const sessions = await apiRequest(`/courses/${course.id}/sessions`);
+        (sessions || []).forEach(s => {
+          // Show upcoming and active sessions
+          if (s.status === 'active' || s.status === 'upcoming') {
+            if (!sessionsByDate[s.sessionDate]) {
+              sessionsByDate[s.sessionDate] = [];
+            }
+            sessionsByDate[s.sessionDate].push({...s, courseName: course.courseName, courseId: course.id});
+          }
+        });
+      } catch (err) {
+        console.error(`Failed to load sessions for course ${course.id}:`, err);
+      }
+    }
+    
+    // Sort by date and flatten
+    const allSessions = Object.entries(sessionsByDate)
+      .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+      .flatMap(([_, sessions]) => sessions);
+    
+    renderAllAvailableSessions(allSessions);
+  } catch (err) {
+    console.error('Failed to load all available sessions:', err);
+    document.getElementById('all-available-sessions').innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div><h3>Could not load sessions</h3></div>`;
+  }
+}
+
+function renderAllAvailableSessions(sessions) {
+  const container = document.getElementById('all-available-sessions');
+  if (!sessions || sessions.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div><h3>No Sessions Available</h3><p>No upcoming or active sessions in your enrolled courses.</p></div>`;
+    return;
+  }
+  
+  // Limit to 6 most recent/relevant sessions on overview
+  const displaySessions = sessions.slice(0, 6);
+  
+  container.innerHTML = displaySessions.map(s => `
+    <div class="item-card" id="session-card-${s.id}">
+      <div class="item-card-header">
+        <div>
+          <div class="item-card-title">${escHtml(s.courseName || 'Session')}</div>
+          <div class="item-card-subtitle">${escHtml(s.sessionDate || '')} · ${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</div>
+        </div>
+        <span class="badge ${s.status === 'active' ? 'badge-active' : 'badge-upcoming'}">
+          ${s.status === 'active' ? 'Active' : 'Upcoming'}
+        </span>
+      </div>
+      <div class="item-card-footer">
+        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">Join</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 async function loadStats() {

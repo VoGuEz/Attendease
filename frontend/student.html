@@ -147,6 +147,15 @@
         <div class="card" style="max-width: 480px; margin-top: 16px;">
           <h3 style="margin-bottom: 16px;">Account</h3>
           <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
+          <div style="margin-bottom: 16px;">
+            <label for="settings-name-input" style="display:block; font-size:14px; margin-bottom:6px; color:var(--text-secondary);">Display Name</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="settings-name-input" placeholder="Your full name"
+                style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text); font-size:14px;" />
+              <button class="btn btn-sm" onclick="saveName()">Save</button>
+            </div>
+            <p id="settings-name-msg" style="font-size:13px; margin-top:6px; display:none;"></p>
+          </div>
           <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
         </div>
       </div>
@@ -164,6 +173,8 @@
       if (user) {
         const emailEl = document.getElementById('settings-email');
         if (emailEl) emailEl.textContent = user.email;
+        const nameInput = document.getElementById('settings-name-input');
+        if (nameInput) nameInput.value = user.fullName || '';
       }
       // Inline theme picker for settings
       const settingsContainer = document.getElementById('settings-theme-switcher');
@@ -196,6 +207,35 @@
         if (src) observer.observe(src, { childList: true, subtree: true });
       }
     });
+
+    async function saveName() {
+      const input = document.getElementById('settings-name-input');
+      const msg = document.getElementById('settings-name-msg');
+      const fullName = input ? input.value.trim() : '';
+      if (!fullName) {
+        msg.textContent = 'Name cannot be empty.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
+        return;
+      }
+      try {
+        const updated = await apiRequest('/auth/update-name', 'PUT', { fullName });
+        const user = getUser();
+        if (user) {
+          user.fullName = updated.fullName;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+        const nameEl = document.getElementById('user-name');
+        if (nameEl) nameEl.textContent = updated.fullName;
+        msg.textContent = 'Name updated successfully!';
+        msg.style.color = 'var(--success, #27ae60)';
+        msg.style.display = 'block';
+      } catch (e) {
+        msg.textContent = e.message || 'Failed to update name.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
+      }
+    }
   </script>
 </body>
 </html>

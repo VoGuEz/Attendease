@@ -24,6 +24,18 @@ function setLoading(btn, loading) {
   }
 }
 
+function isValidEmailDomain(email) {
+  const pattern = /^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,63}$/;
+  if (!pattern.test(email)) return false;
+
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) return false;
+
+  if (domain === 'gmail.com' || domain === 'yahoo.com') return true;
+
+  return domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.');
+}
+
 /* ===== LOGIN ===== */
 function initLogin() {
   const form = document.getElementById('login-form');
@@ -77,6 +89,11 @@ function initSignup() {
 
     if (!fullName || !email || !password) {
       showMsg('auth-msg', 'Please fill in all fields.', 'error');
+      return;
+    }
+
+    if (!isValidEmailDomain(email.toLowerCase())) {
+      showMsg('auth-msg', 'Use a valid email domain (e.g., @gmail.com, @yahoo.com, or another valid domain).', 'error');
       return;
     }
 

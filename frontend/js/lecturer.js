@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadAll();
+
+  // On mobile, open Sessions by default so lecturers see all sessions immediately.
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    showSection('sessions');
+  }
 });
 
 function closeMobileMenu() {

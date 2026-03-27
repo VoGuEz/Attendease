@@ -16,9 +16,12 @@ public class AttendanceRepository {
     }
 
     public Attendance save(Attendance attendance) throws SQLException {
-        String sql = "INSERT INTO attendance (session_id, student_id, status, submitted_full_name, submitted_index_number, submitted_level, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        // Try inserting with all columns first, fallback to basic columns if they don't exist
+        String sqlWithAllColumns = "INSERT INTO attendance (session_id, student_id, status, submitted_full_name, submitted_index_number, submitted_level, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlBasic = "INSERT INTO attendance (session_id, student_id, status) VALUES (?, ?, ?)";
+        
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = conn.prepareStatement(sqlWithAllColumns, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, attendance.getSessionId());
             stmt.setInt(2, attendance.getStudentId());
             stmt.setString(3, attendance.getStatus());
@@ -32,15 +35,43 @@ public class AttendanceRepository {
             if (rs.next()) {
                 attendance.setId(rs.getInt(1));
             }
+        } catch (SQLException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Unknown column")) {
+                // Columns don't exist yet, use basic insert
+                System.err.println("GPS columns not found, using basic insert: " + e.getMessage());
+                try (Connection conn = getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(sqlBasic, Statement.RETURN_GENERATED_KEYS)) {
+                    stmt.setInt(1, attendance.getSessionId());
+                    stmt.setInt(2, attendance.getStudentId());
+                    stmt.setString(3, attendance.getStatus());
+                    stmt.executeUpdate();
+                    ResultSet rs = stmt.getGeneratedKeys();
+                    if (rs.next()) {
+                        attendance.setId(rs.getInt(1));
+                    }
+                }
+                // Try to update with GPS data if columns eventually exist
+                tryUpdateGpsData(attendance);
+            } else {
+                throw e;
+            }
         }
         return attendance;
     }
 
     public List<Attendance> findBySessionId(int sessionId) throws SQLException {
-        String sql = """
+        String sqlFull = """
             SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status,
-                   COALESCE(a.submitted_full_name, u.full_name) as submitted_full_name,
-                   a.submitted_index_number, a.submitted_level, a.latitude, a.longitude
+                   a.submitted_full_name, a.submitted_index_number, a.submitted_level, a.latitude, a.longitude,
+                   COALESCE(a.submitted_full_name, u.full_name) as student_name
+            FROM attendance a
+            JOIN users u ON a.student_id = u.id
+            WHERE a.session_id = ?
+            ORDER BY a.join_time
+            """;
+        String sqlBasic = """
+            SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status,
+                   u.full_name as student_name
             FROM attendance a
             JOIN users u ON a.student_id = u.id
             WHERE a.session_id = ?
@@ -48,18 +79,32 @@ public class AttendanceRepository {
             """;
         List<Attendance> list = new ArrayList<>();
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sqlFull)) {
             stmt.setInt(1, sessionId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Unknown column")) {
+                System.err.println("GPS columns not available, using basic query: " + e.getMessage());
+                try (Connection conn = getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(sqlBasic)) {
+                    stmt.setInt(1, sessionId);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        list.add(mapRow(rs));
+                    }
+                }
+            } else {
+                throw e;
             }
         }
         return list;
     }
 
     public List<Attendance> findByStudentId(int studentId) throws SQLException {
-        String sql = """
+        String sqlFull = """
             SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status,
                    a.submitted_full_name, a.submitted_index_number, a.submitted_level, 
                    a.latitude, a.longitude
@@ -67,13 +112,33 @@ public class AttendanceRepository {
             WHERE a.student_id = ? 
             ORDER BY a.join_time DESC
             """;
+        String sqlBasic = """
+            SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status
+            FROM attendance a 
+            WHERE a.student_id = ? 
+            ORDER BY a.join_time DESC
+            """;
         List<Attendance> list = new ArrayList<>();
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sqlFull)) {
             stmt.setInt(1, studentId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Unknown column")) {
+                System.err.println("GPS columns not available, using basic query: " + e.getMessage());
+                try (Connection conn = getConnection();
+                     PreparedStatement stmt = conn.prepareStatement(sqlBasic)) {
+                    stmt.setInt(1, studentId);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                        list.add(mapRow(rs));
+                    }
+                }
+            } else {
+                throw e;
             }
         }
         return list;
@@ -130,6 +195,26 @@ public class AttendanceRepository {
         stats.put("attendedSessions", attendedSessions);
         stats.put("percentage", Math.round(percentage * 10.0) / 10.0);
         return stats;
+    }
+
+    private void tryUpdateGpsData(Attendance attendance) {
+        if (attendance.getId() <= 0 || (attendance.getSubmittedFullName() == null && attendance.getLatitude() == null)) {
+            return;
+        }
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "UPDATE attendance SET submitted_full_name = ?, submitted_index_number = ?, submitted_level = ?, latitude = ?, longitude = ? WHERE id = ?")) {
+            stmt.setString(1, attendance.getSubmittedFullName());
+            stmt.setString(2, attendance.getSubmittedIndexNumber());
+            stmt.setString(3, attendance.getSubmittedLevel());
+            stmt.setObject(4, attendance.getLatitude());
+            stmt.setObject(5, attendance.getLongitude());
+            stmt.setInt(6, attendance.getId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            // Columns might not exist yet, silently ignore
+            System.err.println("Could not update GPS data (columns may not exist yet): " + e.getMessage());
+        }
     }
 
     private Attendance mapRow(ResultSet rs) throws SQLException {

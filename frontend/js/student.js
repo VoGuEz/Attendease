@@ -43,6 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadAll();
+
+  // On mobile, open Active Sessions by default so students can join quickly.
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    showSection('active');
+  }
 });
 
 function closeMobileMenu() {

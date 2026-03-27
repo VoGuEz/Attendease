@@ -1,4 +1,7 @@
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE =
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8080/api'
+    : 'https://your-backend.up.railway.app/api';
 
 function getToken() {
   return localStorage.getItem('token');
@@ -31,7 +34,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 
   if (response.status === 401) {
     clearAuth();
-    window.location.href = '/index.html';
+    window.location.href = 'index.html';
     throw new Error('Session expired. Please log in again.');
   }
 

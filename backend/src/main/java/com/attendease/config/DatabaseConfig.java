@@ -8,12 +8,23 @@ import java.sql.Statement;
 public class DatabaseConfig {
 
     // DB connection settings can be overridden via environment variables for production.
+    // Supports Railway MySQL plugin variables (MYSQLHOST, MYSQLPORT, MYSQLDATABASE,
+    // MYSQLUSER, MYSQLPASSWORD) as well as generic DB_* variables.
     // Defaults match a standard XAMPP local setup (root user, no password).
-    private static final String HOST     = System.getenv().getOrDefault("DB_HOST", "localhost");
-    private static final int    PORT     = Integer.parseInt(System.getenv().getOrDefault("DB_PORT", "3306"));
-    private static final String DATABASE = System.getenv().getOrDefault("DB_NAME", "attendease");
-    private static final String USER     = System.getenv().getOrDefault("DB_USER", "root");
-    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "");
+    private static final String HOST     = getEnv("DB_HOST",     "MYSQLHOST",     "localhost");
+    private static final int    PORT     = Integer.parseInt(getEnv("DB_PORT", "MYSQLPORT", "3306"));
+    private static final String DATABASE = getEnv("DB_NAME",     "MYSQLDATABASE", "attendease");
+    private static final String USER     = getEnv("DB_USER",     "MYSQLUSER",     "root");
+    private static final String PASSWORD = getEnv("DB_PASSWORD", "MYSQLPASSWORD", "");
+
+    /** Returns the value of {@code primary} env var, falling back to {@code fallback}, then {@code defaultValue}. */
+    private static String getEnv(String primary, String fallback, String defaultValue) {
+        String value = System.getenv(primary);
+        if (value != null && !value.isEmpty()) return value;
+        value = System.getenv(fallback);
+        if (value != null && !value.isEmpty()) return value;
+        return defaultValue;
+    }
 
     private static final String URL = String.format(
             "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",

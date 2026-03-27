@@ -65,6 +65,7 @@ function closeMobileMenu() {
 
 async function loadAll() {
   await Promise.all([loadCourses(), loadActiveSessions(), loadStudents()]);
+  await loadLecturerSessionsPanels();
   updateStats();
 }
 
@@ -148,6 +149,109 @@ function renderActiveSessions(sessions) {
       </div>
     </div>
   `).join('');
+}
+
+async function loadLecturerSessionsPanels() {
+  const sessionsContainer = document.getElementById('sessions-detail');
+  const overviewContainer = document.getElementById('overview-sessions-list');
+
+  if (!lecturerCourses.length) {
+    if (sessionsContainer) {
+      sessionsContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3><p>Create a course and add sessions to get started.</p></div>`;
+    }
+    if (overviewContainer) {
+      overviewContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3></div>`;
+    }
+    return;
+  }
+
+  const courseSessions = await Promise.all(
+    lecturerCourses.map(async (course) => {
+      try {
+        const sessions = await apiRequest(`/courses/${course.id}/sessions`);
+        return (sessions || []).map(s => ({
+          ...s,
+          courseId: course.id,
+          courseName: course.courseName,
+          courseCode: course.courseCode
+        }));
+      } catch (err) {
+        console.error(`Failed to load sessions for course ${course.id}:`, err);
+        return [];
+      }
+    })
+  );
+
+  const allSessions = courseSessions
+    .flat()
+    .sort((a, b) => {
+      const aDate = `${a.sessionDate || ''} ${a.startTime || ''}`;
+      const bDate = `${b.sessionDate || ''} ${b.startTime || ''}`;
+      return new Date(bDate) - new Date(aDate);
+    });
+
+  renderSessionsSectionList(allSessions);
+  renderOverviewSessionsList(allSessions);
+}
+
+function renderOverviewSessionsList(sessions) {
+  const container = document.getElementById('overview-sessions-list');
+  if (!container) return;
+
+  const visible = sessions.filter(s => s.status === 'upcoming' || s.status === 'active').slice(0, 6);
+  if (!visible.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div><h3>No upcoming or active sessions</h3><p>Create a new session from My Courses.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = visible.map(s => `
+    <div class="item-card">
+      <div class="item-card-header">
+        <div>
+          <div class="item-card-title">${escHtml(s.courseName || 'Session')}</div>
+          <div class="item-card-subtitle">${escHtml(s.courseCode || '')} · ${escHtml(s.sessionDate || '')} · ${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</div>
+        </div>
+        <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
+      </div>
+      <div class="item-card-footer">
+        ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">Go Live</button>` : ''}
+        ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
+        <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">Attendance</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSessionsSectionList(sessions) {
+  const container = document.getElementById('sessions-detail');
+  if (!container) return;
+
+  if (!sessions.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3><p>Create sessions from your courses to manage attendance.</p></div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="items-grid">
+      ${sessions.map(s => `
+        <div class="item-card">
+          <div class="item-card-header">
+            <div>
+              <div class="item-card-title">${escHtml(s.courseName || 'Session')}</div>
+              <div class="item-card-subtitle">${escHtml(s.courseCode || '')} · ${escHtml(s.sessionDate || '')} · ${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</div>
+            </div>
+            <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
+          </div>
+          <div class="item-card-footer">
+            ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">Go Live</button>` : ''}
+            ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
+            <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">Attendance</button>
+            <button class="btn btn-sm" onclick='openCreateSession(${s.courseId}, ${JSON.stringify(s.courseName || '')})'>+ Add Session</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function renderStudentsList(students) {

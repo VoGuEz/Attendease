@@ -490,7 +490,9 @@ async function viewAttendance(sessionId) {
     const rawRecords = await apiRequest(`/attendance/session/${sessionId}`);
     const records = (rawRecords || []).map(normalizeAttendanceRecord);
     if (!records.length) {
-      container.innerHTML = `<h3 style="margin-bottom:16px">Session Attendance</h3><div class="empty-state"><div class="empty-icon">📋</div><h3>No attendance yet</h3><p>No students have joined this session.</p></div>`;
+      container.innerHTML = `
+        <div style="margin-bottom:16px"><button class="btn btn-sm btn-outline" onclick="backToSessions()">← Back to Sessions</button></div>
+        <h3 style="margin-bottom:16px">Session Attendance</h3><div class="empty-state"><div class="empty-icon">📋</div><h3>No attendance yet</h3><p>No students have joined this session.</p></div>`;
       return;
     }
     const rows = records.map(r => `
@@ -504,6 +506,7 @@ async function viewAttendance(sessionId) {
       </tr>
     `).join('');
     container.innerHTML = `
+      <div style="margin-bottom:16px"><button class="btn btn-sm btn-outline" onclick="backToSessions()">← Back to Sessions</button></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <h3>Session Attendance (${records.length} student${records.length !== 1 ? 's' : ''})</h3>
         <button class="btn btn-sm btn-outline" onclick="downloadAttendanceCSV(${sessionId})">📥 Download CSV</button>
@@ -520,6 +523,11 @@ async function viewAttendance(sessionId) {
   } catch (err) {
     container.innerHTML = `<p class="text-danger">Failed: ${err.message}</p>`;
   }
+}
+
+function backToSessions() {
+  showSection('sessions');
+  loadLecturerSessionsPanels();
 }
 
 function downloadAttendanceCSV(sessionId) {

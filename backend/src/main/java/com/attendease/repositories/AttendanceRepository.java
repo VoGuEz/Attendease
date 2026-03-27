@@ -38,7 +38,9 @@ public class AttendanceRepository {
 
     public List<Attendance> findBySessionId(int sessionId) throws SQLException {
         String sql = """
-            SELECT a.*, COALESCE(a.submitted_full_name, u.full_name) as student_name
+            SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status,
+                   COALESCE(a.submitted_full_name, u.full_name) as submitted_full_name,
+                   a.submitted_index_number, a.submitted_level, a.latitude, a.longitude
             FROM attendance a
             JOIN users u ON a.student_id = u.id
             WHERE a.session_id = ?
@@ -57,7 +59,14 @@ public class AttendanceRepository {
     }
 
     public List<Attendance> findByStudentId(int studentId) throws SQLException {
-        String sql = "SELECT a.* FROM attendance a WHERE a.student_id = ? ORDER BY a.join_time DESC";
+        String sql = """
+            SELECT a.id, a.session_id, a.student_id, a.join_time, a.leave_time, a.status,
+                   a.submitted_full_name, a.submitted_index_number, a.submitted_level, 
+                   a.latitude, a.longitude
+            FROM attendance a 
+            WHERE a.student_id = ? 
+            ORDER BY a.join_time DESC
+            """;
         List<Attendance> list = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

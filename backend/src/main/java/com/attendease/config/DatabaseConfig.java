@@ -203,6 +203,23 @@ public class DatabaseConfig {
             stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS latitude DOUBLE NULL");
             stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS longitude DOUBLE NULL");
 
+            // Ensure columns exist with ALTER TABLE MODIFY for extra safety
+            try {
+                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_full_name VARCHAR(255) NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_index_number VARCHAR(100) NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_level VARCHAR(50) NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE attendance MODIFY COLUMN latitude DOUBLE NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.execute("ALTER TABLE attendance MODIFY COLUMN longitude DOUBLE NULL");
+            } catch (SQLException ignored) {}
+
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS student_courses (
                     student_id INT NOT NULL,

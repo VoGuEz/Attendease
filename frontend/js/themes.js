@@ -8,6 +8,18 @@ const THEMES = [
   { id: 'sunset', label: 'Sunset', color: '#f97316', bg: '#1c0505' },
 ];
 
+const WALLPAPERS = [
+  { id: 'none',     label: 'None',        emoji: null,  preview: '🚫' },
+  { id: 'pencils',  label: 'Pencils',     emoji: '✏️',  preview: '✏️' },
+  { id: 'books',    label: 'Books',       emoji: '📚',  preview: '📚' },
+  { id: 'stars',    label: 'Stars',       emoji: '⭐',  preview: '⭐' },
+  { id: 'leaves',   label: 'Leaves',      emoji: '🍃',  preview: '🍃' },
+  { id: 'music',    label: 'Music Notes', emoji: '🎵',  preview: '🎵' },
+  { id: 'coffee',   label: 'Coffee',      emoji: '☕',  preview: '☕' },
+  { id: 'clouds',   label: 'Clouds',      emoji: '☁️',  preview: '☁️' },
+  { id: 'bubbles',  label: 'Bubbles',     emoji: '🫧',  preview: '🫧' },
+];
+
 function getCurrentTheme() {
   return localStorage.getItem('theme') || 'dark';
 }
@@ -60,4 +72,79 @@ document.addEventListener('click', (e) => {
   }
 });
 
+/* ===========================
+   Wallpaper Functions
+   =========================== */
+
+const WALLPAPER_ITEM_COUNT = 22;
+
+function getCurrentWallpaper() {
+  return localStorage.getItem('wallpaper') || 'none';
+}
+
+function applyWallpaper(wallpaperId) {
+  localStorage.setItem('wallpaper', wallpaperId);
+
+  const existing = document.getElementById('wallpaper-layer');
+  if (existing) existing.remove();
+
+  document.querySelectorAll('.wallpaper-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.wallpaper === wallpaperId);
+  });
+
+  if (wallpaperId === 'none') return;
+
+  const wp = WALLPAPERS.find(w => w.id === wallpaperId);
+  if (!wp || !wp.emoji) return;
+
+  const layer = document.createElement('div');
+  layer.id = 'wallpaper-layer';
+
+  for (let i = 0; i < WALLPAPER_ITEM_COUNT; i++) {
+    const span = document.createElement('span');
+    span.className = 'wallpaper-item';
+    span.textContent = wp.emoji;
+    const size = 1 + Math.random() * 1.8;
+    const left = Math.random() * 100;
+    const top = Math.random() * 100;
+    const duration = 9 + Math.random() * 10;
+    const delay = -(Math.random() * 12);
+    const rotate = Math.random() * 360;
+    span.style.cssText =
+      `left:${left}vw;top:${top}vh;font-size:${size}rem;` +
+      `animation-duration:${duration}s;animation-delay:${delay}s;` +
+      `--wp-rotate:${rotate}deg;`;
+    layer.appendChild(span);
+  }
+
+  document.body.prepend(layer);
+}
+
+function renderWallpaperPicker(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const currentWp = getCurrentWallpaper();
+  container.innerHTML = WALLPAPERS.map(w =>
+    `<div class="wallpaper-option ${w.id === currentWp ? 'active' : ''}"
+          data-wallpaper="${w.id}"
+          title="${w.label}">
+       <span class="wp-emoji">${w.preview}</span>
+       <span class="wp-label">${w.label}</span>
+     </div>`
+  ).join('');
+
+  container.addEventListener('click', (e) => {
+    const option = e.target.closest('.wallpaper-option');
+    if (option && option.dataset.wallpaper) {
+      applyWallpaper(option.dataset.wallpaper);
+    }
+  });
+}
+
+function initWallpaper() {
+  applyWallpaper(getCurrentWallpaper());
+}
+
 initTheme();
+initWallpaper();

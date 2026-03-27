@@ -140,6 +140,11 @@
           <div id="settings-theme-switcher"></div>
         </div>
         <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Wallpaper</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose a floating background wallpaper.</p>
+          <div id="settings-wallpaper-picker" class="wallpaper-picker"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
           <h3 style="margin-bottom: 16px;">Account</h3>
           <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
           <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
@@ -176,6 +181,9 @@
           </div>
         `;
       }
+
+      // Wallpaper picker for settings
+      renderWallpaperPicker('settings-wallpaper-picker');
 
       // Mirror active sessions to active section
       const activeFull = document.getElementById('active-sessions-full');

@@ -1,6 +1,7 @@
 let currentUser = null;
 let lecturerCourses = [];
 let activeSection = 'overview';
+let lastAttendanceData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('lecturer');
@@ -204,7 +205,10 @@ async function viewAttendance(sessionId) {
       </tr>
     `).join('');
     container.innerHTML = `
-      <h3 style="margin-bottom:16px">Session Attendance (${records.length} student${records.length !== 1 ? 's' : ''})</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3>Session Attendance (${records.length} student${records.length !== 1 ? 's' : ''})</h3>
+        <button class="btn btn-sm btn-outline" onclick="downloadAttendanceCSV(${sessionId})">⬇ Download CSV</button>
+      </div>
       <div class="table-wrapper">
         <table>
           <thead><tr><th>Student</th><th>Join Time</th><th>Status</th></tr></thead>
@@ -212,9 +216,42 @@ async function viewAttendance(sessionId) {
         </table>
       </div>
     `;
+    // Store records for CSV export
+    lastAttendanceData = { sessionId, records };
   } catch (err) {
     container.innerHTML = `<p class="text-danger">Failed: ${err.message}</p>`;
   }
+}
+
+function downloadAttendanceCSV(sessionId) {
+  const data = lastAttendanceData;
+  if (!data || data.sessionId !== sessionId || !data.records) {
+    showToast('No attendance data to download.', 'error');
+    return;
+  }
+  const escape = val => {
+    const str = String(val ?? '');
+    return str.includes(',') || str.includes('"') || str.includes('\n')
+      ? `"${str.replace(/"/g, '""')}"` : str;
+  };
+  const lines = ['Student,Join Time,Status'];
+  data.records.forEach(r => {
+    lines.push([
+      escape(r.studentName || 'Unknown'),
+      escape(r.joinTime || ''),
+      escape(r.status || '')
+    ].join(','));
+  });
+  const csv = lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `attendance-session-${sessionId}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 async function handleCreateCourse(e) {

@@ -1047,7 +1047,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     border: none;
     cursor: pointer;
     padding: 8px;
-    margin-right: 12px;
+    margin: 0;
+    order: -1;
   }
 
   .hamburger-menu span {
@@ -1070,12 +1071,30 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     transform: rotate(-45deg) translate(8px, -8px);
   }
 
+  .logo {
+    flex: 1;
+    font-size: 18px;
+  }
+
+  .navbar-right {
+    gap: 8px;
+  }
+
+  #theme-switcher-container {
+    display: none;
+  }
+
+  .user-badge {
+    display: none;
+  }
+
   .main-content {
     margin-left: 0;
   }
 
   .navbar {
-    padding: 0 16px;
+    padding: 0 12px;
+    gap: 8px;
   }
 
   .stats-grid {

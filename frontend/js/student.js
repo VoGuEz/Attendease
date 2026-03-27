@@ -6,11 +6,90 @@ let joinLocation = null;
 let sidebarOpen = false;
 let countdownInterval = null;
 
+// ===== Utility: Date/Time Formatting =====
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const date = new Date(2000, 0, 1, +h, +m);
+  if (isNaN(date)) return timeStr;
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// ===== Utility: Skeleton Loaders =====
+function renderSkeletonCards(container, count = 3) {
+  container.innerHTML = Array.from({ length: count }, () => `
+    <div class="skeleton">
+      <div class="skeleton-line long"></div>
+      <div class="skeleton-line short"></div>
+      <div class="skeleton-line medium" style="margin-top:16px"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <div class="skeleton-line short" style="margin:0"></div>
+        <div class="skeleton-line short" style="margin:0"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== Utility: Avatar Badge =====
+function setAvatarBadge(user) {
+  const el = document.getElementById('user-avatar');
+  if (!el || !user?.fullName) return;
+  const parts = user.fullName.trim().split(/\s+/);
+  const initials = parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0])
+    : parts[0].substring(0, 2);
+  el.textContent = initials.toUpperCase();
+}
+
+// ===== Utility: Notification Dot =====
+function updateNotificationDot(activeCount) {
+  const dot = document.getElementById('notif-dot-active');
+  if (dot) dot.style.display = activeCount > 0 ? 'inline-block' : 'none';
+}
+
+// ===== Utility: Breadcrumb =====
+function updateBreadcrumb(...crumbs) {
+  const bc = document.getElementById('breadcrumb');
+  if (!bc) return;
+  if (crumbs.length === 0) { bc.innerHTML = ''; return; }
+  bc.innerHTML = crumbs.map((c, i) => {
+    if (i < crumbs.length - 1) {
+      return `<a href="#" onclick="${c.onclick || ''};return false;">${escHtml(c.label)}</a><span class="separator">›</span>`;
+    }
+    return `<span class="current">${escHtml(c.label)}</span>`;
+  }).join('');
+}
+
+// ===== Utility: Animated Count =====
+function animateCount(el, target) {
+  if (!el) return;
+  const duration = 600;
+  const start = performance.now();
+  el.classList.add('counting');
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+    else { el.textContent = target; el.classList.remove('counting'); }
+  }
+  requestAnimationFrame(tick);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('student');
   if (!currentUser) return;
 
   document.getElementById('user-name').textContent = currentUser.fullName;
+  setAvatarBadge(currentUser);
   renderThemeSwitcher('theme-switcher-container');
 
   // Mobile menu functionality
@@ -71,6 +150,9 @@ function closeMobileMenu() {
 
 async function loadAll() {
   showLoading('overview-stats', true);
+  renderSkeletonCards(document.getElementById('enrolled-courses'));
+  renderSkeletonCards(document.getElementById('available-courses'));
+  renderSkeletonCards(document.getElementById('all-available-sessions'), 2);
   await Promise.all([loadStats(), loadCourses(), loadActiveSessions(), loadAllAvailableSessions()]);
   showLoading('overview-stats', false);
 }
@@ -127,7 +209,7 @@ function renderAllAvailableSessions(sessions) {
       <div class="item-card-header">
         <div>
           <div class="item-card-title">${escHtml(s.courseName || 'Session')}</div>
-          <div class="item-card-subtitle">${escHtml(s.sessionDate || '')} · ${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</div>
+          <div class="item-card-subtitle">${formatDate(s.sessionDate)} · ${formatTime(s.startTime)} – ${formatTime(s.endTime)}</div>
         </div>
         <span class="badge ${s.status === 'active' ? 'badge-active' : 'badge-upcoming'}">
           ${s.status === 'active' ? 'Active' : 'Upcoming'}
@@ -135,7 +217,7 @@ function renderAllAvailableSessions(sessions) {
       </div>
       ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
       <div class="item-card-footer">
-        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">Join</button>
+        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">✋ Join</button>
       </div>
     </div>
   `).join('');
@@ -145,10 +227,10 @@ function renderAllAvailableSessions(sessions) {
 async function loadStats() {
   try {
     const stats = await apiRequest('/attendance/stats');
-    document.getElementById('stat-enrolled').textContent = allCourses.enrolled?.length ?? 0;
-    document.getElementById('stat-attended').textContent = stats.attendedSessions ?? 0;
+    animateCount(document.getElementById('stat-enrolled'), allCourses.enrolled?.length ?? 0);
+    animateCount(document.getElementById('stat-attended'), stats.attendedSessions ?? 0);
     document.getElementById('stat-percentage').textContent = (stats.percentage ?? 0) + '%';
-    document.getElementById('total-sessions-stat').textContent = stats.totalSessions ?? 0;
+    animateCount(document.getElementById('total-sessions-stat'), stats.totalSessions ?? 0);
 
     const pct = stats.percentage ?? 0;
     document.getElementById('overall-progress-fill').style.width = pct + '%';
@@ -194,7 +276,12 @@ function renderEnrolledCourses(courses) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><h3>No Enrolled Courses</h3><p>Browse available courses below and enroll.</p></div>`;
     return;
   }
-  container.innerHTML = courses.map(c => `
+  container.innerHTML = courses.map(c => {
+    const attended = c.attendedSessions ?? 0;
+    const total = c.totalSessions ?? 0;
+    const pct = total > 0 ? Math.round((attended / total) * 100) : 0;
+    const barColor = pct >= 75 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+    return `
     <div class="item-card">
       <div class="item-card-header">
         <div>
@@ -203,11 +290,22 @@ function renderEnrolledCourses(courses) {
         </div>
       </div>
       <div class="item-card-body text-muted" style="font-size:13px">${escHtml(c.description || 'No description')}</div>
-      <div class="item-card-footer">
-        <button class="btn btn-sm btn-outline" onclick="viewCourseSessions(${c.id}, '${escHtml(c.courseName)}')">View Sessions</button>
+      ${total > 0 ? `
+      <div class="course-progress">
+        <div class="course-progress-label">
+          <span>Attendance</span>
+          <span>${attended}/${total} (${pct}%)</span>
+        </div>
+        <div class="course-progress-bar">
+          <div class="course-progress-fill" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+      </div>` : ''}
+      <div class="item-card-footer" style="margin-top:10px">
+        <button class="btn btn-sm btn-outline" onclick="viewCourseSessions(${c.id}, '${escHtml(c.courseName)}')">📅 View Sessions</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function renderAvailableCourses(courses) {
@@ -226,7 +324,7 @@ function renderAvailableCourses(courses) {
       </div>
       <div class="item-card-body text-muted" style="font-size:13px">${escHtml(c.description || 'No description')}</div>
       <div class="item-card-footer">
-        <button class="btn btn-sm" onclick="enrollCourse(${c.id}, this)">Enroll</button>
+        <button class="btn btn-sm" onclick="enrollCourse(${c.id}, this)">➕ Enroll</button>
       </div>
     </div>
   `).join('');
@@ -234,16 +332,18 @@ function renderAvailableCourses(courses) {
 
 function renderActiveSessions(sessions) {
   const container = document.getElementById('active-sessions');
+  updateNotificationDot(sessions.length);
   if (!sessions.length) {
     container.innerHTML = `<div class="empty-state"><div class="empty-icon">📡</div><h3>No Active Sessions</h3><p>There are no active sessions right now.</p></div>`;
     return;
   }
+  container.style.display = '';
   container.innerHTML = sessions.map(s => `
     <div class="item-card" id="session-card-${s.id}">
       <div class="item-card-header">
         <div>
           <div class="item-card-title">${escHtml(s.courseName || 'Session')}</div>
-          <div class="item-card-subtitle">${escHtml(s.sessionDate || '')} · ${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</div>
+          <div class="item-card-subtitle">${formatDate(s.sessionDate)} · ${formatTime(s.startTime)} – ${formatTime(s.endTime)}</div>
         </div>
         <span class="badge badge-active">Active</span>
       </div>
@@ -251,7 +351,7 @@ function renderActiveSessions(sessions) {
         ${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}
       </div>
       <div class="item-card-footer">
-        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">Join Session</button>
+        <button class="btn btn-sm btn-success" data-session-id="${s.id}" onclick="openJoinModal(${s.id}, this)">✋ Join Session</button>
       </div>
     </div>
   `).join('');
@@ -430,8 +530,13 @@ function showJoinMessage(message, type) {
 
 async function viewCourseSessions(courseId, courseName) {
   showSection('courses');
+  updateBreadcrumb(
+    { label: 'Courses', onclick: "showSection('courses')" },
+    { label: courseName }
+  );
   const container = document.getElementById('course-sessions-detail');
-  container.innerHTML = `<h3 style="margin-bottom:16px">${escHtml(courseName)} – Sessions</h3><div class="loading-overlay"><span class="spinner"></span></div>`;
+  container.innerHTML = `<h3 style="margin-bottom:16px">${escHtml(courseName)} – Sessions</h3>`;
+  renderSkeletonCards(container, 2);
   document.getElementById('sessions-panel').style.display = 'block';
 
   try {
@@ -442,8 +547,8 @@ async function viewCourseSessions(courseId, courseName) {
     }
     const rows = sessions.map(s => `
       <tr>
-        <td>${escHtml(s.sessionDate || '')}</td>
-        <td>${escHtml(s.startTime || '')} – ${escHtml(s.endTime || '')}</td>
+        <td>${formatDate(s.sessionDate)}</td>
+        <td>${formatTime(s.startTime)} – ${formatTime(s.endTime)}</td>
         <td><span class="badge badge-${s.status}">${s.status}</span></td>
       </tr>
     `).join('');
@@ -485,8 +590,10 @@ function showSection(name) {
     l.closest('li')?.classList.toggle('active', l.dataset.section === name);
   });
 
+  const sectionLabels = { overview: 'Overview', courses: 'My Courses', active: 'Active Sessions', settings: 'Settings' };
+  updateBreadcrumb({ label: sectionLabels[name] || name });
+
   if (isMobile()) {
-    // On mobile all sections are visible; just scroll to the target
     const section = document.getElementById(`section-${name}`);
     if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
@@ -515,8 +622,13 @@ function showToast(msg, type = 'success') {
     background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--warning)'};
     color: white; padding: 12px 20px; border-radius: 8px;
     font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 12px; max-width: 420px;
   `;
+
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
+  const iconEl = document.createElement('span');
+  iconEl.textContent = icon;
+  toast.appendChild(iconEl);
 
   const text = document.createElement('span');
   text.textContent = msg;
@@ -526,11 +638,19 @@ function showToast(msg, type = 'success') {
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '\u00D7';
   closeBtn.style.cssText = 'background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;';
-  closeBtn.addEventListener('click', () => toast.remove());
+  closeBtn.addEventListener('click', () => {
+    toast.classList.add('toast-exit');
+    toast.addEventListener('animationend', () => toast.remove());
+  });
   toast.appendChild(closeBtn);
 
   document.body.appendChild(toast);
-  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.add('toast-exit');
+      toast.addEventListener('animationend', () => toast.remove());
+    }
+  }, 5000);
 }
 
 function escHtml(str) {

@@ -6,11 +6,6 @@
   <title>Student Dashboard – AttendEase</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
     .location-chip {
       display: inline-flex;
       align-items: center;
@@ -35,7 +30,10 @@
     </button>
     <a href="dashboard.html" class="logo">📚 AttendEase</a>
     <div class="navbar-right">
-      <span class="user-badge">👤 <span id="user-name">...</span></span>
+      <div class="user-badge">
+        <span class="avatar-badge" id="user-avatar"></span>
+        <span class="user-badge-name" id="user-name">...</span>
+      </div>
       <div id="theme-switcher-container"></div>
       <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
     </div>
@@ -55,7 +53,7 @@
           <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
         </li>
         <li>
-          <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions</a>
+          <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions <span class="notification-dot" id="notif-dot-active" style="display:none"></span></a>
         </li>
         <li>
           <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>
@@ -65,6 +63,7 @@
 
     <!-- Main content -->
     <main class="main-content">
+      <div class="breadcrumb" id="breadcrumb"></div>
 
       <!-- OVERVIEW SECTION -->
       <div id="section-overview" class="section active">

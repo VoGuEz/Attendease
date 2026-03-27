@@ -5,12 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lecturer Dashboard – AttendEase</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <style>
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-  </style>
 </head>
 <body>
 
@@ -23,7 +17,10 @@
     </button>
     <a href="dashboard.html" class="logo">📚 AttendEase</a>
     <div class="navbar-right">
-      <span class="user-badge">👨‍🏫 <span id="user-name">...</span></span>
+      <div class="user-badge">
+        <span class="avatar-badge" id="user-avatar"></span>
+        <span class="user-badge-name" id="user-name">...</span>
+      </div>
       <div id="theme-switcher-container"></div>
       <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
     </div>
@@ -43,7 +40,7 @@
           <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
         </li>
         <li>
-          <a href="#" data-section="sessions"><span class="sidebar-icon">📅</span> Sessions</a>
+          <a href="#" data-section="sessions"><span class="sidebar-icon">📅</span> Sessions <span class="notification-dot" id="notif-dot-sessions" style="display:none"></span></a>
         </li>
         <li>
           <a href="#" data-section="students"><span class="sidebar-icon">👥</span> Students</a>
@@ -56,6 +53,7 @@
 
     <!-- Main content -->
     <main class="main-content">
+      <div class="breadcrumb" id="breadcrumb"></div>
 
       <!-- OVERVIEW SECTION -->
       <div id="section-overview" class="section active">

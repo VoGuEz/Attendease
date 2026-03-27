@@ -287,11 +287,6 @@ input, select, textarea {
   transition: border-color 0.2s ease, background-color 0.3s ease;
 }
 
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-}
-
 input::placeholder, textarea::placeholder {
   color: var(--text-secondary);
 }
@@ -542,7 +537,6 @@ textarea { resize: vertical; min-height: 80px; }
 .sidebar-nav li.active button {
   color: var(--accent-primary);
   background: rgba(99, 102, 241, 0.1);
-  border-left: 3px solid var(--accent-primary);
 }
 
 .sidebar-icon {
@@ -1334,13 +1328,407 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   margin: 24px 0;
 }
 
+/* ===========================
+   Skeleton Loading
+   =========================== */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: var(--border-color);
+  margin-bottom: 10px;
+}
+
+.skeleton-line.short { width: 40%; }
+.skeleton-line.medium { width: 65%; }
+.skeleton-line.long { width: 90%; }
+
+.skeleton-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--border-color);
+}
+
+.skeleton-stat {
+  height: 32px;
+  width: 60px;
+  border-radius: 6px;
+  background: var(--border-color);
+  margin-top: 8px;
+}
+
+/* ===========================
+   Input Focus & Validation
+   =========================== */
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+input:invalid:not(:placeholder-shown):not(:focus),
+textarea:invalid:not(:placeholder-shown):not(:focus) {
+  border-color: var(--danger);
+}
+
+input:valid:not(:placeholder-shown):not([type="hidden"]):not([type="date"]):not([type="time"]),
+textarea:valid:not(:placeholder-shown) {
+  border-color: var(--success);
+}
+
+.input-error-msg {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 2px;
+  display: none;
+}
+
+.input-error-msg.visible {
+  display: block;
+}
+
+/* ===========================
+   Card Depth & Shadows
+   =========================== */
+
+.stat-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.item-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.item-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18), 0 0 0 1px var(--accent-secondary);
+}
+
+.modal {
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px var(--border-color);
+}
+
+.auth-card {
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ===========================
+   Toast Slide-In / Slide-Out
+   =========================== */
+
+@keyframes toastSlideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toastSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(120%); opacity: 0; }
+}
+
+.toast {
+  animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+}
+
+.toast.toast-exit {
+  animation: toastSlideOut 0.3s ease forwards;
+}
+
+/* ===========================
+   Breadcrumb Navigation
+   =========================== */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  min-height: 20px;
+}
+
+.breadcrumb a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+  color: var(--accent-secondary);
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-size: 11px;
+}
+
+.breadcrumb .current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ===========================
+   Confirmation Dialog
+   =========================== */
+
+.confirm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.confirm-dialog {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: calc(100% - 32px);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  text-align: center;
+  animation: dialogPop 0.2s cubic-bezier(0.21, 1.02, 0.73, 1);
+}
+
+@keyframes dialogPop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.confirm-dialog .confirm-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.confirm-dialog h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.confirm-dialog p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.confirm-dialog .confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* ===========================
+   Empty State (Enhanced)
+   =========================== */
+
+.empty-state .empty-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  animation: emptyBounce 2s ease-in-out infinite;
+}
+
+@keyframes emptyBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ===========================
+   Stat Card Micro-Animations
+   =========================== */
+
+.stat-card {
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  transition: color 0.3s ease;
+}
+
+.stat-value.counting {
+  color: var(--accent-secondary);
+}
+
+/* ===========================
+   Progress Bar (per-course)
+   =========================== */
+
+.course-progress {
+  margin-top: 10px;
+}
+
+.course-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.course-progress-bar {
+  height: 6px;
+  background: var(--progress-bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.course-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background: var(--accent-primary);
+}
+
+/* ===========================
+   Sidebar Active Indicator
+   =========================== */
+
+.sidebar-nav li a,
+.sidebar-nav li button {
+  position: relative;
+  border-left: 3px solid transparent;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.3s ease;
+}
+
+.sidebar-nav li.active a,
+.sidebar-nav li.active button {
+  border-left: 3px solid var(--accent-primary);
+}
+
+.sidebar-nav li.active a::before,
+.sidebar-nav li.active button::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--accent-primary);
+  border-radius: 0 3px 3px 0;
+  animation: sidebarSlide 0.25s ease;
+}
+
+@keyframes sidebarSlide {
+  from { height: 0; opacity: 0; }
+  to { height: 60%; opacity: 1; }
+}
+
+/* ===========================
+   Profile Avatar / Initials Badge
+   =========================== */
+
+.avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-badge-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ===========================
+   Notification Dot
+   =========================== */
+
+.notification-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: notifPulse 1.5s ease-in-out infinite;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+@keyframes notifPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* ===========================
+   Date/Time Formatting Helper
+   =========================== */
+
+.datetime {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .item-card,
-  .badge-active {
+  .badge-active,
+  .skeleton::after,
+  .empty-state .empty-icon,
+  .notification-dot,
+  .toast {
     animation: none !important;
   }
-  .item-card:hover {
+  .item-card:hover,
+  .stat-card:hover {
     transform: none;
   }
 }

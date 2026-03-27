@@ -67,3 +67,12 @@ function logout() {
   clearAuth();
   window.location.href = 'index.html';
 }
+
+async function updateProfile(fullName, email) {
+  const body = {};
+  if (fullName) body.fullName = fullName;
+  if (email) body.email = email;
+  const data = await apiRequest('/auth/profile', 'PUT', body);
+  setAuth(getToken(), data);
+  return data;
+}

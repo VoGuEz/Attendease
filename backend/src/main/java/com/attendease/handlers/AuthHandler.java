@@ -95,6 +95,66 @@ public class AuthHandler {
         }
     }
 
+    public void handleUpdateProfile(HttpExchange exchange) throws IOException {
+        if (!"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
+            ResponseUtil.sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        try {
+            String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+            String token = JwtUtil.extractTokenFromHeader(authHeader);
+            if (token == null) {
+                ResponseUtil.sendError(exchange, 401, "Unauthorized");
+                return;
+            }
+
+            int userId = JwtUtil.getUserId(token);
+
+            String body = ResponseUtil.readBody(exchange);
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+            String fullName = getStringOrNull(json, "fullName");
+            String email = getStringOrNull(json, "email");
+
+            if ((fullName == null || fullName.isBlank()) && (email == null || email.isBlank())) {
+                ResponseUtil.sendError(exchange, 400, "At least one field is required");
+                return;
+            }
+
+            java.util.Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                ResponseUtil.sendError(exchange, 404, "User not found");
+                return;
+            }
+
+            User user = userOpt.get();
+            if (fullName != null && !fullName.isBlank()) {
+                user.setFullName(fullName.trim());
+            }
+            if (email != null && !email.isBlank()) {
+                String newEmail = email.trim().toLowerCase();
+                java.util.Optional<User> existing = userRepository.findByEmail(newEmail);
+                if (existing.isPresent() && existing.get().getId() != userId) {
+                    ResponseUtil.sendError(exchange, 400, "Email already in use");
+                    return;
+                }
+                user.setEmail(newEmail);
+            }
+
+            userRepository.update(user);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", user.getId());
+            result.put("email", user.getEmail());
+            result.put("fullName", user.getFullName());
+            result.put("role", user.getRole());
+            ResponseUtil.sendResponse(exchange, 200, result);
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.sendError(exchange, 401, "Invalid or expired token");
+        } catch (Exception e) {
+            ResponseUtil.sendError(exchange, 500, "Internal server error: " + e.getMessage());
+        }
+    }
+
     private String getStringOrNull(JsonObject json, String key) {
         if (json.has(key) && !json.get(key).isJsonNull()) {
             return json.get(key).getAsString();

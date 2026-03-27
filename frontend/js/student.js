@@ -3,6 +3,7 @@ let allCourses = {};
 let activeSection = 'overview';
 let pendingJoinButton = null;
 let joinLocation = null;
+let sidebarOpen = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('student');
@@ -10,6 +11,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('user-name').textContent = currentUser.fullName;
   renderThemeSwitcher('theme-switcher-container');
+
+  // Mobile menu functionality
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+  
+  if (hamburgerBtn) {
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      hamburgerBtn.classList.toggle('active');
+      sidebar.classList.toggle('open');
+      mobileOverlay.classList.toggle('open');
+    });
+  }
+  
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', closeMobileMenu);
+  }
 
   document.getElementById('logout-btn').addEventListener('click', logout);
   document.getElementById('join-session-form')?.addEventListener('submit', submitJoinSession);
@@ -19,11 +38,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       showSection(link.dataset.section);
+      closeMobileMenu();
     });
   });
 
   await loadAll();
 });
+
+function closeMobileMenu() {
+  if (sidebarOpen) {
+    sidebarOpen = false;
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    
+    hamburgerBtn.classList.remove('active');
+    sidebar.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+  }
+}
 
 async function loadAll() {
   showLoading('overview-stats', true);

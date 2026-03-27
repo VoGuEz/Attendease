@@ -335,11 +335,12 @@ textarea { resize: vertical; min-height: 80px; }
 .navbar {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  padding: 0 24px;
+  padding: 0 16px;
   height: 64px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 16px;
   position: fixed;
   top: 0;
   left: 0;
@@ -356,6 +357,7 @@ textarea { resize: vertical; min-height: 80px; }
   align-items: center;
   gap: 8px;
   text-decoration: none;
+  flex: 1;
 }
 
 .logo:hover { text-decoration: none; filter: brightness(1.1); }
@@ -1004,6 +1006,68 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 @media (max-width: 768px) {
   .sidebar {
     display: none;
+    position: fixed;
+    width: 240px;
+    height: 100vh;
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    padding: 24px 0;
+    z-index: 99;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    display: block;
+    transform: translateX(0);
+  }
+
+  .mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 98;
+  }
+
+  .mobile-overlay.open {
+    display: block;
+  }
+
+  .hamburger-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    margin-right: 12px;
+  }
+
+  .hamburger-menu span {
+    width: 24px;
+    height: 2.5px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .hamburger-menu.active span:nth-child(1) {
+    transform: rotate(45deg) translate(10px, 10px);
+  }
+
+  .hamburger-menu.active span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger-menu.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(8px, -8px);
   }
 
   .main-content {
@@ -1041,9 +1105,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   }
 }
 
-/* ===========================
-   Misc utility
-   =========================== */
+/* Hamburger menu - hidden on desktop */
+.hamburger-menu {
+  display: none;
+}
 
 .text-success { color: var(--success); }
 .text-warning { color: var(--warning); }

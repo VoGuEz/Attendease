@@ -2,6 +2,7 @@ let currentUser = null;
 let lecturerCourses = [];
 let activeSection = 'overview';
 let lastAttendanceData = null;
+let sidebarOpen = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('lecturer');
@@ -10,12 +11,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('user-name').textContent = currentUser.fullName;
   renderThemeSwitcher('theme-switcher-container');
 
+  // Mobile menu functionality
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+  
+  if (hamburgerBtn) {
+    hamburgerBtn.addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      hamburgerBtn.classList.toggle('active');
+      sidebar.classList.toggle('open');
+      mobileOverlay.classList.toggle('open');
+    });
+  }
+  
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', closeMobileMenu);
+  }
+
   document.getElementById('logout-btn').addEventListener('click', logout);
 
   document.querySelectorAll('[data-section]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       showSection(link.dataset.section);
+      closeMobileMenu();
     });
   });
 
@@ -29,6 +49,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadAll();
 });
+
+function closeMobileMenu() {
+  if (sidebarOpen) {
+    sidebarOpen = false;
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    
+    hamburgerBtn.classList.remove('active');
+    sidebar.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+  }
+}
 
 async function loadAll() {
   await Promise.all([loadCourses(), loadActiveSessions(), loadStudents()]);

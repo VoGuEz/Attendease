@@ -16,6 +16,11 @@
 
   <!-- Navbar -->
   <nav class="navbar">
+    <button class="hamburger-menu" id="hamburger-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
     <a href="dashboard.html" class="logo">📚 AttendEase</a>
     <div class="navbar-right">
       <span class="user-badge">👨‍🏫 <span id="user-name">...</span></span>
@@ -25,8 +30,11 @@
   </nav>
 
   <div class="dashboard-layout">
+    <!-- Mobile overlay -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <ul class="sidebar-nav">
         <li class="active">
           <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>

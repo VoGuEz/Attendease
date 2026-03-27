@@ -3,6 +3,7 @@ let lecturerCourses = [];
 let activeSection = 'overview';
 let lastAttendanceData = null;
 let sidebarOpen = false;
+let countdownInterval = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('lecturer');
@@ -160,12 +161,16 @@ function renderActiveSessions(sessions) {
         </div>
         <span class="badge badge-active">Live</span>
       </div>
+      <div style="margin-bottom:12px;">
+        ${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}
+      </div>
       <div class="item-card-footer">
         <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">View Attendance</button>
         <button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End Session</button>
       </div>
     </div>
   `).join('');
+  startCountdownTimers();
 }
 
 async function loadLecturerSessionsPanels() {
@@ -230,6 +235,7 @@ function renderOverviewSessionsList(sessions) {
         </div>
         <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
       </div>
+      ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
       <div class="item-card-footer">
         ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">Go Live</button>` : ''}
         ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
@@ -237,6 +243,7 @@ function renderOverviewSessionsList(sessions) {
       </div>
     </div>
   `).join('');
+  startCountdownTimers();
 }
 
 function renderSessionsSectionList(sessions) {
@@ -259,6 +266,7 @@ function renderSessionsSectionList(sessions) {
             </div>
             <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
           </div>
+          ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
           <div class="item-card-footer">
             ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">Go Live</button>` : ''}
             ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
@@ -271,6 +279,7 @@ function renderSessionsSectionList(sessions) {
       `).join('')}
     </div>
   `;
+  startCountdownTimers();
 }
 
 function renderStudentsList(students) {
@@ -669,6 +678,72 @@ async function confirmDeleteSession(sessionId) {
     showToast('Session deleted successfully!', 'success');
     await loadAll();
   } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ===== Countdown Timer =====
+
+const COUNTDOWN_CIRCUMFERENCE = 2 * Math.PI * 20; // radius=20
+
+function buildCountdownRing(sessionId, sessionDate, startTime, endTime) {
+  return `
+    <div class="countdown-ring" data-countdown data-session-id="${sessionId}"
+         data-start="${sessionDate} ${startTime}" data-end="${sessionDate} ${endTime}">
+      <svg viewBox="0 0 48 48">
+        <circle class="ring-bg" cx="24" cy="24" r="20" />
+        <circle class="ring-progress" cx="24" cy="24" r="20"
+                stroke-dasharray="${COUNTDOWN_CIRCUMFERENCE}"
+                stroke-dashoffset="0" />
+      </svg>
+      <div class="countdown-label">
+        <span class="countdown-time">--:--</span>
+        <small>remaining</small>
+      </div>
+    </div>
+  `;
+}
+
+function startCountdownTimers() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  updateAllCountdowns();
+  countdownInterval = setInterval(updateAllCountdowns, 1000);
+}
+
+function updateAllCountdowns() {
+  document.querySelectorAll('[data-countdown]').forEach(el => {
+    const endStr = el.dataset.end;
+    const startStr = el.dataset.start;
+    if (!endStr || !startStr) return;
+
+    const now = new Date();
+    const end = new Date(endStr);
+    const start = new Date(startStr);
+
+    const totalDuration = end - start;
+    const remaining = end - now;
+
+    const ring = el.querySelector('.ring-progress');
+    const label = el.querySelector('.countdown-time');
+
+    if (remaining <= 0) {
+      label.textContent = '0:00';
+      ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE;
+      ring.classList.remove('warning');
+      ring.classList.add('danger');
+      return;
+    }
+
+    const fraction = Math.max(0, Math.min(1, remaining / totalDuration));
+    ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE * (1 - fraction);
+
+    // Color based on remaining fraction
+    ring.classList.remove('warning', 'danger');
+    if (fraction <= 0.15) ring.classList.add('danger');
+    else if (fraction <= 0.35) ring.classList.add('warning');
+
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    label.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+  });
 }
 
 // ===== Search/Filter =====

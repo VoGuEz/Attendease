@@ -624,13 +624,39 @@ textarea { resize: vertical; min-height: 80px; }
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 20px;
-  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  animation: cardEntrance 0.4s ease both;
 }
 
 .item-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.01);
   border-color: var(--accent-secondary);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 0 0 1px var(--accent-secondary);
 }
+
+.item-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Staggered entrance delays for grid children */
+.items-grid .item-card:nth-child(1) { animation-delay: 0s; }
+.items-grid .item-card:nth-child(2) { animation-delay: 0.06s; }
+.items-grid .item-card:nth-child(3) { animation-delay: 0.12s; }
+.items-grid .item-card:nth-child(4) { animation-delay: 0.18s; }
+.items-grid .item-card:nth-child(5) { animation-delay: 0.24s; }
+.items-grid .item-card:nth-child(6) { animation-delay: 0.30s; }
+.items-grid .item-card:nth-child(n+7) { animation-delay: 0.36s; }
 
 .item-card-header {
   display: flex;
@@ -672,9 +698,67 @@ textarea { resize: vertical; min-height: 80px; }
   font-weight: 600;
 }
 
-.badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success); animation: badgePulse 2s ease-in-out infinite; }
 .badge-upcoming { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
 .badge-completed { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ===========================
+   Circular Countdown Timer
+   =========================== */
+
+.countdown-ring {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.countdown-ring svg {
+  width: 48px;
+  height: 48px;
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+}
+
+.countdown-ring .ring-bg {
+  fill: none;
+  stroke: var(--progress-bg);
+  stroke-width: 4;
+}
+
+.countdown-ring .ring-progress {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+}
+
+.countdown-ring .ring-progress.warning {
+  stroke: var(--warning);
+}
+
+.countdown-ring .ring-progress.danger {
+  stroke: var(--danger);
+}
+
+.countdown-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.countdown-label small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
 
 /* ===========================
    Table
@@ -1248,4 +1332,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   border: none;
   border-top: 1px solid var(--border-color);
   margin: 24px 0;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .item-card,
+  .badge-active {
+    animation: none !important;
+  }
+  .item-card:hover {
+    transform: none;
+  }
 }

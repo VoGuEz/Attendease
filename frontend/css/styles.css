@@ -1004,6 +1004,26 @@ tr:hover td { background: rgba(255,255,255,0.02); }
    =========================== */
 
 @media (max-width: 768px) {
+  body.mobile-single-page .sidebar,
+  body.mobile-single-page .mobile-overlay,
+  body.mobile-single-page .hamburger-menu {
+    display: none !important;
+  }
+
+  body.mobile-single-page .main-content {
+    margin-left: 0;
+    padding: 20px 16px 28px;
+  }
+
+  body.mobile-single-page .section {
+    display: block;
+    margin-bottom: 24px;
+  }
+
+  body.mobile-single-page .section:last-child {
+    margin-bottom: 0;
+  }
+
   .sidebar {
     display: none;
     position: fixed;
@@ -1095,6 +1115,18 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   .navbar {
     padding: 0 12px;
     gap: 8px;
+  }
+
+  /* Show ALL sections on one scrollable page on mobile */
+  .section {
+    display: block !important;
+    margin-bottom: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
   }
 
   .stats-grid {

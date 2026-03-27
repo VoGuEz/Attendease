@@ -48,11 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await loadAll();
-
-  // On mobile, open Sessions by default so lecturers see all sessions immediately.
-  if (window.matchMedia('(max-width: 768px)').matches) {
-    showSection('sessions');
-  }
+  syncSectionLayout();
+  window.addEventListener('resize', syncSectionLayout);
 });
 
 function closeMobileMenu() {
@@ -491,12 +488,38 @@ async function changeStatus(sessionId, status, btn) {
   }
 }
 
+function isMobile() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function syncSectionLayout() {
+  const mobileSinglePage = isMobile();
+  document.body.classList.toggle('mobile-single-page', mobileSinglePage);
+
+  if (mobileSinglePage) {
+    document.querySelectorAll('.section').forEach(s => s.classList.add('active'));
+    return;
+  }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const currentSection = document.getElementById(`section-${activeSection}`) || document.getElementById('section-overview');
+  if (currentSection) currentSection.classList.add('active');
+}
+
 function showSection(name) {
   activeSection = name;
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('[data-section]').forEach(l => {
     l.closest('li')?.classList.toggle('active', l.dataset.section === name);
   });
+
+  if (isMobile()) {
+    // On mobile all sections are visible; just scroll to the target
+    const section = document.getElementById(`section-${name}`);
+    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const section = document.getElementById(`section-${name}`);
   if (section) section.classList.add('active');
 }

@@ -62,6 +62,47 @@ public class AuthHandler {
         }
     }
 
+    public void handleUpdateName(HttpExchange exchange) throws IOException {
+        if (!"PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
+            ResponseUtil.sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        try {
+            String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+            String token = JwtUtil.extractTokenFromHeader(authHeader);
+            if (token == null) {
+                ResponseUtil.sendError(exchange, 401, "Unauthorized");
+                return;
+            }
+            int userId = JwtUtil.getUserId(token);
+
+            String body = ResponseUtil.readBody(exchange);
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+            String fullName = getStringOrNull(json, "fullName");
+            if (fullName == null || fullName.isBlank()) {
+                ResponseUtil.sendError(exchange, 400, "Full name is required");
+                return;
+            }
+
+            boolean updated = userRepository.updateFullName(userId, fullName.trim());
+            if (!updated) {
+                ResponseUtil.sendError(exchange, 404, "User not found");
+                return;
+            }
+
+            String role = JwtUtil.getRole(token);
+            String email = JwtUtil.validateToken(token).get("email", String.class);
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", userId);
+            userInfo.put("email", email);
+            userInfo.put("fullName", fullName.trim());
+            userInfo.put("role", role);
+            ResponseUtil.sendResponse(exchange, 200, userInfo);
+        } catch (Exception e) {
+            ResponseUtil.sendError(exchange, 500, "Internal server error: " + e.getMessage());
+        }
+    }
+
     public void handleGetStudents(HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
             ResponseUtil.sendError(exchange, 405, "Method not allowed");

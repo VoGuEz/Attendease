@@ -41,6 +41,18 @@ public class Main {
             authHandler.handleUpdateName(exchange);
         });
 
+        server.createContext("/api/auth/request-reset", exchange -> {
+            addCorsHeaders(exchange);
+            if (handlePreflight(exchange)) return;
+            authHandler.handleRequestReset(exchange);
+        });
+
+        server.createContext("/api/auth/reset-password", exchange -> {
+            addCorsHeaders(exchange);
+            if (handlePreflight(exchange)) return;
+            authHandler.handleResetPassword(exchange);
+        });
+
         server.createContext("/api/students", exchange -> {
             addCorsHeaders(exchange);
             if (handlePreflight(exchange)) return;

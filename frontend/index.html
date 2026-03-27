@@ -35,7 +35,53 @@
       </form>
 
       <div class="auth-footer">
+        <a href="#" id="forgot-password-link" style="display:block; margin-bottom:8px; font-size:14px;">Forgot your password?</a>
         Don't have an account? <a href="signup.html">Sign Up</a>
+      </div>
+
+      <!-- Forgot password step 1: request reset -->
+      <div id="reset-request-section" style="display:none;">
+        <h2 style="margin-bottom:16px;">Reset Password</h2>
+        <div id="reset-request-msg" class="msg"></div>
+        <form id="reset-request-form">
+          <div class="form-group">
+            <label for="reset-email">Email address</label>
+            <input type="email" id="reset-email" placeholder="you@example.com" required />
+          </div>
+          <button type="submit" class="btn" style="width:100%; margin-top:8px">Send Reset Code</button>
+        </form>
+        <div id="reset-token-display" style="display:none; margin-top:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px;">
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Your reset code (valid for 15 minutes):</p>
+          <code id="reset-token-value" style="word-break:break-all; font-size:13px; color:var(--accent-primary);"></code>
+          <button class="btn btn-sm" style="margin-top:12px; width:100%;" onclick="showResetStep2()">Enter Reset Code</button>
+        </div>
+        <div class="auth-footer" style="margin-top:16px;">
+          <a href="#" id="back-to-login-1">Back to Sign In</a>
+        </div>
+      </div>
+
+      <!-- Forgot password step 2: enter token + new password -->
+      <div id="reset-password-section" style="display:none;">
+        <h2 style="margin-bottom:16px;">Set New Password</h2>
+        <div id="reset-password-msg" class="msg"></div>
+        <form id="reset-password-form">
+          <div class="form-group">
+            <label for="reset-token-input">Reset Code</label>
+            <input type="text" id="reset-token-input" placeholder="Paste your reset code" required />
+          </div>
+          <div class="form-group">
+            <label for="reset-new-password">New Password</label>
+            <input type="password" id="reset-new-password" placeholder="Min. 6 characters" required />
+          </div>
+          <div class="form-group">
+            <label for="reset-confirm-password">Confirm New Password</label>
+            <input type="password" id="reset-confirm-password" placeholder="Repeat new password" required />
+          </div>
+          <button type="submit" class="btn" style="width:100%; margin-top:8px">Reset Password</button>
+        </form>
+        <div class="auth-footer" style="margin-top:16px;">
+          <a href="#" id="back-to-login-2">Back to Sign In</a>
+        </div>
       </div>
     </div>
   </div>
@@ -48,6 +94,101 @@
     // Redirect if already logged in
     const user = getUser();
     if (user && getToken()) window.location.href = 'dashboard.html';
+
+    // Password reset flow
+    const loginForm = document.getElementById('login-form');
+    const loginFooter = document.querySelector('.auth-footer');
+    const resetRequestSection = document.getElementById('reset-request-section');
+    const resetPasswordSection = document.getElementById('reset-password-section');
+    const loginHeading = document.querySelector('.auth-card h2');
+    const authMsg = document.getElementById('auth-msg');
+
+    document.getElementById('forgot-password-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      loginForm.style.display = 'none';
+      loginFooter.style.display = 'none';
+      loginHeading.style.display = 'none';
+      authMsg.className = 'msg';
+      resetRequestSection.style.display = 'block';
+      resetPasswordSection.style.display = 'none';
+    });
+
+    document.getElementById('back-to-login-1').addEventListener('click', (e) => {
+      e.preventDefault();
+      backToLogin();
+    });
+    document.getElementById('back-to-login-2').addEventListener('click', (e) => {
+      e.preventDefault();
+      backToLogin();
+    });
+
+    function backToLogin() {
+      loginForm.style.display = '';
+      loginFooter.style.display = '';
+      loginHeading.style.display = '';
+      resetRequestSection.style.display = 'none';
+      resetPasswordSection.style.display = 'none';
+    }
+
+    function showResetStep2() {
+      resetRequestSection.style.display = 'none';
+      resetPasswordSection.style.display = 'block';
+      // Pre-fill token from step 1
+      const tokenVal = document.getElementById('reset-token-value').textContent;
+      if (tokenVal) document.getElementById('reset-token-input').value = tokenVal;
+    }
+
+    function showResetMsg(id, text, type) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = text;
+      el.className = 'msg ' + type;
+    }
+
+    document.getElementById('reset-request-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const email = document.getElementById('reset-email').value.trim();
+      if (!email) { showResetMsg('reset-request-msg', 'Please enter your email.', 'error'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      try {
+        const data = await apiRequest('/auth/request-reset', 'POST', { email });
+        showResetMsg('reset-request-msg', data.message, 'success');
+        if (data.resetToken) {
+          document.getElementById('reset-token-value').textContent = data.resetToken;
+          document.getElementById('reset-token-display').style.display = 'block';
+        }
+      } catch (err) {
+        showResetMsg('reset-request-msg', err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Send Reset Code';
+      }
+    });
+
+    document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const token = document.getElementById('reset-token-input').value.trim();
+      const newPassword = document.getElementById('reset-new-password').value;
+      const confirmPassword = document.getElementById('reset-confirm-password').value;
+      if (!token) { showResetMsg('reset-password-msg', 'Please enter the reset code.', 'error'); return; }
+      if (newPassword.length < 6) { showResetMsg('reset-password-msg', 'Password must be at least 6 characters.', 'error'); return; }
+      if (newPassword !== confirmPassword) { showResetMsg('reset-password-msg', 'Passwords do not match.', 'error'); return; }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      try {
+        const data = await apiRequest('/auth/reset-password', 'POST', { token, newPassword });
+        showResetMsg('reset-password-msg', data.message + ' Redirecting...', 'success');
+        setTimeout(() => backToLogin(), 2000);
+      } catch (err) {
+        showResetMsg('reset-password-msg', err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Reset Password';
+      }
+    });
   </script>
 </body>
 </html>

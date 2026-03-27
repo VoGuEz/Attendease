@@ -116,6 +116,27 @@ public class SessionRepository {
         return sessions;
     }
 
+    public boolean update(int id, Date sessionDate, Time startTime, Time endTime) throws SQLException {
+        String sql = "UPDATE sessions SET session_date = ?, start_time = ?, end_time = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDate(1, sessionDate);
+            stmt.setTime(2, startTime);
+            stmt.setTime(3, endTime);
+            stmt.setInt(4, id);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM sessions WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
     private Session mapRow(ResultSet rs) throws SQLException {
         Session session = new Session();
         session.setId(rs.getInt("id"));

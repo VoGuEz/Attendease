@@ -113,6 +113,27 @@ public class CourseRepository {
         return 0;
     }
 
+    public boolean update(int id, String courseName, String courseCode, String description) throws SQLException {
+        String sql = "UPDATE courses SET course_name = ?, course_code = ?, description = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, courseName);
+            stmt.setString(2, courseCode);
+            stmt.setString(3, description);
+            stmt.setInt(4, id);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM courses WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
     public boolean isEnrolled(int studentId, int courseId) throws SQLException {
         String sql = "SELECT 1 FROM student_courses WHERE student_id = ? AND course_id = ?";
         try (Connection conn = getConnection();

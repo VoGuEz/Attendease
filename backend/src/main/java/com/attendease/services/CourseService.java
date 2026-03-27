@@ -52,4 +52,19 @@ public class CourseService {
     public int getEnrolledCount(int courseId) throws SQLException {
         return courseRepository.countEnrolledStudents(courseId);
     }
+
+    public Course updateCourse(int courseId, int lecturerId, String name, String code, String description) throws SQLException {
+        Course existing = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        if (existing.getLecturerId() != lecturerId) throw new IllegalArgumentException("You can only edit your own courses");
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Course name is required");
+        if (code == null || code.isBlank()) throw new IllegalArgumentException("Course code is required");
+        courseRepository.update(courseId, name.trim(), code.trim().toUpperCase(), description != null ? description.trim() : "");
+        return courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+    }
+
+    public void deleteCourse(int courseId, int lecturerId) throws SQLException {
+        Course existing = courseRepository.findById(courseId).orElseThrow(() -> new IllegalArgumentException("Course not found"));
+        if (existing.getLecturerId() != lecturerId) throw new IllegalArgumentException("You can only delete your own courses");
+        courseRepository.delete(courseId);
+    }
 }

@@ -75,6 +75,35 @@ public class SessionHandler {
                 return;
             }
 
+            // PUT /api/sessions/{id}
+            if (method.equals("PUT") && path.matches("/api/sessions/\\d+") && !path.contains("/status")) {
+                if (!"lecturer".equals(role)) {
+                    ResponseUtil.sendError(exchange, 403, "Only lecturers can edit sessions");
+                    return;
+                }
+                int sessionId = Integer.parseInt(path.substring("/api/sessions/".length()));
+                String body = ResponseUtil.readBody(exchange);
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                String date = getStr(json, "sessionDate");
+                String start = getStr(json, "startTime");
+                String end = getStr(json, "endTime");
+                Session updated = sessionService.updateSession(sessionId, date, start, end);
+                ResponseUtil.sendResponse(exchange, 200, updated);
+                return;
+            }
+
+            // DELETE /api/sessions/{id}
+            if (method.equals("DELETE") && path.matches("/api/sessions/\\d+")) {
+                if (!"lecturer".equals(role)) {
+                    ResponseUtil.sendError(exchange, 403, "Only lecturers can delete sessions");
+                    return;
+                }
+                int sessionId = Integer.parseInt(path.substring("/api/sessions/".length()));
+                sessionService.deleteSession(sessionId);
+                ResponseUtil.sendResponse(exchange, 200, Map.of("message", "Session deleted successfully"));
+                return;
+            }
+
             ResponseUtil.sendError(exchange, 404, "Not found");
         } catch (IllegalArgumentException e) {
             ResponseUtil.sendError(exchange, 400, e.getMessage());

@@ -80,6 +80,49 @@ public class UserRepository {
         return students;
     }
 
+    public boolean updatePassword(int userId, String passwordHash) throws SQLException {
+        String sql = "UPDATE users SET password_hash = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, passwordHash);
+            stmt.setInt(2, userId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    public void saveResetToken(int userId, String token, Timestamp expiresAt) throws SQLException {
+        String sql = "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, token);
+            stmt.setTimestamp(3, expiresAt);
+            stmt.executeUpdate();
+        }
+    }
+
+    public Optional<int[]> findValidResetToken(String token) throws SQLException {
+        String sql = "SELECT user_id, id FROM password_reset_tokens WHERE token = ? AND used = FALSE AND expires_at > NOW()";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, token);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return Optional.of(new int[]{ rs.getInt("user_id"), rs.getInt("id") });
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void markResetTokenUsed(int tokenId) throws SQLException {
+        String sql = "UPDATE password_reset_tokens SET used = TRUE WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, tokenId);
+            stmt.executeUpdate();
+        }
+    }
+
     private User mapRow(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getInt("id"));

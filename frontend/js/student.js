@@ -34,6 +34,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('join-session-form')?.addEventListener('submit', submitJoinSession);
   document.getElementById('capture-location-btn')?.addEventListener('click', captureLocation);
 
+  // Search/filter listeners
+  document.getElementById('search-enrolled')?.addEventListener('input', (e) => {
+    filterCards('enrolled-courses', e.target.value);
+  });
+  document.getElementById('search-available')?.addEventListener('input', (e) => {
+    filterCards('available-courses', e.target.value);
+  });
+
   document.querySelectorAll('[data-section]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -262,6 +270,12 @@ function openJoinModal(sessionId, btn) {
   pendingJoinButton = btn;
   joinLocation = null;
 
+  // Disable the clicked Join button immediately
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = 'Opening...';
+  }
+
   const modal = document.getElementById('modal-join-session');
   const form = document.getElementById('join-session-form');
   const fullNameInput = document.getElementById('join-full-name');
@@ -284,6 +298,12 @@ function openJoinModal(sessionId, btn) {
     locationStatus.textContent = 'Location not captured yet.';
   }
   modal?.classList.add('open');
+
+  // Re-enable the button after modal is open so user can close and retry
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = 'Join Session';
+  }
 }
 
 function closeJoinModal() {
@@ -488,15 +508,37 @@ function showToast(msg, type = 'success') {
     background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--warning)'};
     color: white; padding: 12px 20px; border-radius: 8px;
     font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    animation: slideIn 0.3s ease;
+    animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 12px;
   `;
-  toast.textContent = msg;
+
+  const text = document.createElement('span');
+  text.textContent = msg;
+  text.style.flex = '1';
+  toast.appendChild(text);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '\u00D7';
+  closeBtn.style.cssText = 'background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;';
+  closeBtn.addEventListener('click', () => toast.remove());
+  toast.appendChild(closeBtn);
+
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
 
 function escHtml(str) {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(String(str)));
   return div.innerHTML;
+}
+
+function filterCards(containerId, query) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const q = query.toLowerCase().trim();
+  const cards = container.querySelectorAll('.item-card');
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = q === '' || text.includes(q) ? '' : 'none';
+  });
 }

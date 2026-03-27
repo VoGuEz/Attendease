@@ -42,6 +42,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('create-course-btn').addEventListener('click', () => openModal('modal-create-course'));
   document.getElementById('form-create-course').addEventListener('submit', handleCreateCourse);
   document.getElementById('form-create-session').addEventListener('submit', handleCreateSession);
+  document.getElementById('form-edit-course').addEventListener('submit', handleEditCourse);
+  document.getElementById('form-edit-session').addEventListener('submit', handleEditSession);
+
+  // Search/filter listeners
+  document.getElementById('search-courses')?.addEventListener('input', (e) => {
+    filterCards('courses-list', e.target.value);
+  });
+  document.getElementById('search-sessions')?.addEventListener('input', (e) => {
+    filterCards('sessions-detail', e.target.value);
+  });
+  document.getElementById('search-students')?.addEventListener('input', (e) => {
+    filterTableRows('students-list', e.target.value);
+  });
 
   document.querySelectorAll('.modal-close').forEach(btn => {
     btn.addEventListener('click', () => closeModal(btn.closest('.modal-overlay').id));
@@ -125,6 +138,8 @@ function renderCourses(courses) {
       <div class="item-card-footer">
         <button class="btn btn-sm btn-outline" onclick="viewSessions(${c.id}, '${escHtml(c.courseName)}')">📅 Sessions</button>
         <button class="btn btn-sm" onclick="openCreateSession(${c.id}, '${escHtml(c.courseName)}')">+ Add Session</button>
+        <button class="btn btn-sm btn-outline" onclick="openEditCourse(${c.id})">✏️ Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="confirmDeleteCourse(${c.id}, '${escHtml(c.courseName)}')">🗑️ Delete</button>
       </div>
     </div>
   `).join('');
@@ -249,6 +264,8 @@ function renderSessionsSectionList(sessions) {
             ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
             <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">Attendance</button>
             <button class="btn btn-sm" onclick='openCreateSession(${s.courseId}, ${JSON.stringify(s.courseName || '')})'>+ Add Session</button>
+            ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-outline" onclick="openEditSession(${s.id}, '${escHtml(s.sessionDate || '')}', '${escHtml(s.startTime || '')}', '${escHtml(s.endTime || '')}')">✏️ Edit</button>` : ''}
+            ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-danger" onclick="confirmDeleteSession(${s.id})">🗑️</button>` : ''}
           </div>
         </div>
       `).join('')}
@@ -315,6 +332,8 @@ async function viewSessions(courseId, courseName) {
               ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">Go Live</button>` : ''}
               ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">End</button>` : ''}
               <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">Attendance</button>
+              ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-outline" onclick="openEditSession(${s.id}, '${escHtml(s.sessionDate || '')}', '${escHtml(s.startTime || '')}', '${escHtml(s.endTime || '')}')">✏️ Edit</button>` : ''}
+              ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-danger" onclick="confirmDeleteSession(${s.id})">🗑️</button>` : ''}
             </div>
           </div>
         `).join('')}
@@ -549,14 +568,129 @@ function showToast(msg, type = 'success') {
     background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--warning)'};
     color: white; padding: 12px 20px; border-radius: 8px;
     font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    display: flex; align-items: center; gap: 12px;
   `;
-  toast.textContent = msg;
+
+  const text = document.createElement('span');
+  text.textContent = msg;
+  text.style.flex = '1';
+  toast.appendChild(text);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '\u00D7';
+  closeBtn.style.cssText = 'background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;';
+  closeBtn.addEventListener('click', () => toast.remove());
+  toast.appendChild(closeBtn);
+
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
 
 function escHtml(str) {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(String(str)));
   return div.innerHTML;
+}
+
+// ===== Edit/Delete Course =====
+
+function openEditCourse(courseId) {
+  const course = lecturerCourses.find(c => c.id === courseId);
+  if (!course) { showToast('Course not found.', 'error'); return; }
+  document.getElementById('edit-course-id').value = courseId;
+  document.getElementById('edit-course-name').value = course.courseName || '';
+  document.getElementById('edit-course-code').value = course.courseCode || '';
+  document.getElementById('edit-course-desc').value = course.description || '';
+  openModal('modal-edit-course');
+}
+
+async function handleEditCourse(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const courseId = parseInt(document.getElementById('edit-course-id').value);
+  const courseName = document.getElementById('edit-course-name').value.trim();
+  const courseCode = document.getElementById('edit-course-code').value.trim();
+  const description = document.getElementById('edit-course-desc').value.trim();
+  if (!courseName || !courseCode) { showToast('Course name and code are required.', 'error'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await apiRequest(`/courses/${courseId}`, 'PUT', { courseName, courseCode, description });
+    closeModal('modal-edit-course');
+    showToast('Course updated successfully!', 'success');
+    await loadCourses();
+    updateStats();
+  } catch (err) { showToast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Save Changes'; }
+}
+
+async function confirmDeleteCourse(courseId, courseName) {
+  if (!confirm(`Are you sure you want to delete "${courseName}"? This will also delete all its sessions and attendance records.`)) return;
+  try {
+    await apiRequest(`/courses/${courseId}`, 'DELETE');
+    showToast('Course deleted successfully!', 'success');
+    await loadAll();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ===== Edit/Delete Session =====
+
+function openEditSession(sessionId, sessionDate, startTime, endTime) {
+  document.getElementById('edit-session-id').value = sessionId;
+  document.getElementById('edit-session-date').value = sessionDate || '';
+  document.getElementById('edit-session-start').value = (startTime || '').substring(0, 5);
+  document.getElementById('edit-session-end').value = (endTime || '').substring(0, 5);
+  openModal('modal-edit-session');
+}
+
+async function handleEditSession(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const sessionId = parseInt(document.getElementById('edit-session-id').value);
+  const sessionDate = document.getElementById('edit-session-date').value;
+  const startTime = document.getElementById('edit-session-start').value;
+  const endTime = document.getElementById('edit-session-end').value;
+  if (!sessionDate || !startTime || !endTime) { showToast('All session fields are required.', 'error'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await apiRequest(`/sessions/${sessionId}`, 'PUT', { sessionDate, startTime, endTime });
+    closeModal('modal-edit-session');
+    showToast('Session updated successfully!', 'success');
+    await loadAll();
+  } catch (err) { showToast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Save Changes'; }
+}
+
+async function confirmDeleteSession(sessionId) {
+  if (!confirm('Are you sure you want to delete this session? All attendance records for it will be lost.')) return;
+  try {
+    await apiRequest(`/sessions/${sessionId}`, 'DELETE');
+    showToast('Session deleted successfully!', 'success');
+    await loadAll();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ===== Search/Filter =====
+
+function filterCards(containerId, query) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const q = query.toLowerCase().trim();
+  const cards = container.querySelectorAll('.item-card');
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = q === '' || text.includes(q) ? '' : 'none';
+  });
+}
+
+function filterTableRows(containerId, query) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const q = query.toLowerCase().trim();
+  const rows = container.querySelectorAll('tbody tr');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = q === '' || text.includes(q) ? '' : 'none';
+  });
 }

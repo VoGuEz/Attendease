@@ -1012,7 +1012,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   body.mobile-single-page .main-content {
     margin-left: 0;
-    padding: 20px 16px 28px;
+    padding: 20px 12px 28px;
   }
 
   body.mobile-single-page .section {
@@ -1110,6 +1110,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
   .main-content {
     margin-left: 0;
+    padding: 20px 12px;
   }
 
   .navbar {
@@ -1133,26 +1134,84 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 24px;
+  }
+
   .items-grid {
     grid-template-columns: 1fr;
   }
 
+  .item-card {
+    padding: 16px;
+  }
+
+  .item-card-footer {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .item-card-footer .btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    padding: 6px 10px;
+    text-align: center;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
   .auth-card {
-    padding: 24px;
+    padding: 24px 16px;
+    max-width: 100%;
+  }
+
+  .modal-overlay {
+    padding: 12px;
   }
 
   .modal {
-    padding: 24px;
+    padding: 20px;
+    max-width: 95vw;
+    max-height: 85vh;
   }
 
   .welcome-card {
-    padding: 32px 24px;
+    padding: 32px 20px;
+  }
+
+  .table-wrapper {
+    margin: 0 -12px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  th, td {
+    padding: 10px 10px;
+    font-size: 13px;
   }
 }
 
 @media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .item-card-footer {
+    flex-direction: column;
+  }
+
+  .item-card-footer .btn {
+    width: 100%;
   }
 }
 

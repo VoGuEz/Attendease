@@ -86,6 +86,35 @@ public class CourseHandler {
                 return;
             }
 
+            // PUT /api/courses/{id}
+            if (method.equals("PUT") && path.matches("/api/courses/\\d+")) {
+                if (!"lecturer".equals(role)) {
+                    ResponseUtil.sendError(exchange, 403, "Only lecturers can edit courses");
+                    return;
+                }
+                int courseId = extractId(path, "/api/courses/", null);
+                String body = ResponseUtil.readBody(exchange);
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                String name = getStr(json, "courseName");
+                String code = getStr(json, "courseCode");
+                String description = getStr(json, "description");
+                Course updated = courseService.updateCourse(courseId, userId, name, code, description);
+                ResponseUtil.sendResponse(exchange, 200, updated);
+                return;
+            }
+
+            // DELETE /api/courses/{id}
+            if (method.equals("DELETE") && path.matches("/api/courses/\\d+")) {
+                if (!"lecturer".equals(role)) {
+                    ResponseUtil.sendError(exchange, 403, "Only lecturers can delete courses");
+                    return;
+                }
+                int courseId = extractId(path, "/api/courses/", null);
+                courseService.deleteCourse(courseId, userId);
+                ResponseUtil.sendResponse(exchange, 200, Map.of("message", "Course deleted successfully"));
+                return;
+            }
+
             ResponseUtil.sendError(exchange, 404, "Not found");
         } catch (IllegalArgumentException e) {
             ResponseUtil.sendError(exchange, 400, e.getMessage());

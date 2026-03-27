@@ -49,4 +49,21 @@ public class SessionService {
     public Session getSessionById(int id) throws SQLException {
         return sessionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Session not found"));
     }
+
+    public Session updateSession(int sessionId, String date, String startTime, String endTime) throws SQLException {
+        sessionRepository.findById(sessionId).orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        if (date == null || date.isBlank()) throw new IllegalArgumentException("Session date is required");
+        if (startTime == null || startTime.isBlank()) throw new IllegalArgumentException("Start time is required");
+        if (endTime == null || endTime.isBlank()) throw new IllegalArgumentException("End time is required");
+        sessionRepository.update(sessionId,
+                Date.valueOf(date),
+                Time.valueOf(startTime.length() == 5 ? startTime + ":00" : startTime),
+                Time.valueOf(endTime.length() == 5 ? endTime + ":00" : endTime));
+        return sessionRepository.findById(sessionId).orElseThrow(() -> new IllegalArgumentException("Session not found"));
+    }
+
+    public void deleteSession(int sessionId) throws SQLException {
+        sessionRepository.findById(sessionId).orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        sessionRepository.delete(sessionId);
+    }
 }

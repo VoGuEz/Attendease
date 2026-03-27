@@ -142,4 +142,41 @@ public class AuthHandler {
         }
         return null;
     }
+
+    public void handleRequestReset(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            ResponseUtil.sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        try {
+            String body = ResponseUtil.readBody(exchange);
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+            String email = getStringOrNull(json, "email");
+            Map<String, Object> result = authService.requestPasswordReset(email);
+            ResponseUtil.sendResponse(exchange, 200, result);
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.sendError(exchange, 400, e.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.sendError(exchange, 500, "Internal server error");
+        }
+    }
+
+    public void handleResetPassword(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            ResponseUtil.sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        try {
+            String body = ResponseUtil.readBody(exchange);
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+            String token = getStringOrNull(json, "token");
+            String newPassword = getStringOrNull(json, "newPassword");
+            Map<String, Object> result = authService.resetPassword(token, newPassword);
+            ResponseUtil.sendResponse(exchange, 200, result);
+        } catch (IllegalArgumentException e) {
+            ResponseUtil.sendError(exchange, 400, e.getMessage());
+        } catch (Exception e) {
+            ResponseUtil.sendError(exchange, 500, "Internal server error");
+        }
+    }
 }

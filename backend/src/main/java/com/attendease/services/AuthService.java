@@ -6,10 +6,12 @@ import com.attendease.utils.JwtUtil;
 import com.attendease.utils.PasswordUtil;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class AuthService {
@@ -107,5 +109,45 @@ public class AuthService {
 
         // Accept globally valid domain-style emails (e.g., school.edu, company.co.uk).
         return domain.contains(".") && !domain.startsWith(".") && !domain.endsWith(".");
+    }
+
+    public Map<String, Object> requestPasswordReset(String email) throws Exception {
+        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
+        String normalizedEmail = email.trim().toLowerCase();
+
+        Optional<User> optUser = userRepository.findByEmail(normalizedEmail);
+        // Always return success to prevent email enumeration
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "If an account with that email exists, a reset code has been generated.");
+
+        if (optUser.isEmpty()) return response;
+
+        User user = optUser.get();
+        String token = UUID.randomUUID().toString();
+        // Token valid for 15 minutes
+        Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + 15 * 60 * 1000);
+        userRepository.saveResetToken(user.getId(), token, expiresAt);
+
+        response.put("resetToken", token);
+        return response;
+    }
+
+    public Map<String, Object> resetPassword(String token, String newPassword) throws Exception {
+        if (token == null || token.isBlank()) throw new IllegalArgumentException("Reset token is required");
+        if (newPassword == null || newPassword.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
+
+        Optional<int[]> result = userRepository.findValidResetToken(token);
+        if (result.isEmpty()) throw new IllegalArgumentException("Invalid or expired reset token");
+
+        int userId = result.get()[0];
+        int tokenId = result.get()[1];
+
+        String hash = PasswordUtil.hashPassword(newPassword);
+        userRepository.updatePassword(userId, hash);
+        userRepository.markResetTokenUsed(tokenId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Password reset successfully. You can now log in with your new password.");
+        return response;
     }
 }

@@ -136,6 +136,22 @@ Switch themes using the 🎨 button in the top-right corner or the Settings pane
 | Forest | Green        | Deep forest   |
 | Sunset | Orange       | Deep burgundy |
 
+## Wallpapers
+
+Choose a floating background wallpaper in the **Settings → Wallpaper** panel. Elements gently animate across the background at low opacity.
+
+| Wallpaper    | Description                  |
+|--------------|------------------------------|
+| None         | No wallpaper (default)       |
+| Pencils ✏️   | Floating pencils             |
+| Books 📚     | Floating books               |
+| Stars ⭐     | Floating stars               |
+| Leaves 🍃    | Floating leaves              |
+| Music Notes 🎵 | Floating music notes       |
+| Coffee ☕    | Floating coffee cups         |
+| Clouds ☁️    | Floating clouds              |
+| Bubbles 🫧   | Floating bubbles             |
+
 ## Usage
 
 ### As a Student

@@ -3,11 +3,11 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Cache dependencies before copying source
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn dependency:go-offline -q
 
 # Build the fat JAR
-COPY src ./src
+COPY backend/src ./src
 RUN mvn package -DskipTests -q
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────

@@ -252,7 +252,7 @@ Before pushing to Railway you can test the Docker image locally:
 
 ```bash
 # Build
-docker build -t attendease-backend ./backend
+docker build -t attendease-backend -f backend/Dockerfile .
 
 # Run (requires a local MySQL instance)
 docker run -p 8080:8080 \

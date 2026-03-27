@@ -34,6 +34,12 @@ public class Main {
             authHandler.handleLogin(exchange);
         });
 
+        server.createContext("/api/auth/profile", exchange -> {
+            addCorsHeaders(exchange);
+            if (handlePreflight(exchange)) return;
+            authHandler.handleUpdateProfile(exchange);
+        });
+
         server.createContext("/api/students", exchange -> {
             addCorsHeaders(exchange);
             if (handlePreflight(exchange)) return;

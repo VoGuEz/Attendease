@@ -57,6 +57,17 @@ public class UserRepository {
         return Optional.empty();
     }
 
+    public void update(User user) throws SQLException {
+        String sql = "UPDATE users SET email = ?, full_name = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, user.getEmail());
+            stmt.setString(2, user.getFullName());
+            stmt.setInt(3, user.getId());
+            stmt.executeUpdate();
+        }
+    }
+
     public List<User> findAllStudents() throws SQLException {
         String sql = "SELECT * FROM users WHERE role = 'student' ORDER BY full_name";
         List<User> students = new ArrayList<>();

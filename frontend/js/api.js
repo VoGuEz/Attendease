@@ -1,7 +1,7 @@
 const API_BASE =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8080/api'
-    : 'https://your-backend.up.railway.app/api';
+    : 'https://attendease-production-e306.up.railway.app/api';
 
 function getToken() {
   return localStorage.getItem('token');

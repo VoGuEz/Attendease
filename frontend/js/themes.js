@@ -6,6 +6,9 @@ const THEMES = [
   { id: 'ocean',  label: 'Ocean',  color: '#06b6d4', bg: '#042f2e' },
   { id: 'forest', label: 'Forest', color: '#22c55e', bg: '#052e16' },
   { id: 'sunset', label: 'Sunset', color: '#f97316', bg: '#1c0505' },
+  { id: 'ruby',   label: 'Ruby',   color: '#ef4444', bg: '#2a0b14' },
+  { id: 'gold',   label: 'Gold',   color: '#fbbf24', bg: '#231403' },
+  { id: 'aurora', label: 'Aurora', color: '#2dd4bf', bg: '#071a2f' },
 ];
 
 const WALLPAPERS = [
@@ -18,6 +21,10 @@ const WALLPAPERS = [
   { id: 'coffee',   label: 'Coffee',      emoji: '☕',  preview: '☕' },
   { id: 'clouds',   label: 'Clouds',      emoji: '☁️',  preview: '☁️' },
   { id: 'bubbles',  label: 'Bubbles',     emoji: '🫧',  preview: '🫧' },
+  { id: 'lightning', label: 'Lightning',  emoji: '⚡',  preview: '⚡' },
+  { id: 'crystals',  label: 'Crystals',   emoji: '💎',  preview: '💎' },
+  { id: 'flames',    label: 'Flames',     emoji: '🔥',  preview: '🔥' },
+  { id: 'planets',   label: 'Planets',    emoji: '🪐',  preview: '🪐' },
 ];
 
 function getCurrentTheme() {

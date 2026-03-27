@@ -1,6 +1,6 @@
 /* ===========================
-   CSS Custom Properties - 7 Themes
-   =========================== */
+  CSS Custom Properties - 10 Themes
+  =========================== */
 
 :root, [data-theme="dark"] {
   --bg-primary: #0f172a;
@@ -105,6 +105,51 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --progress-bg: #7c2d12;
+}
+
+[data-theme="ruby"] {
+  --bg-primary: #2a0b14;
+  --bg-secondary: #4a1021;
+  --bg-card: #4a1021;
+  --text-primary: #fff1f2;
+  --text-secondary: #fda4af;
+  --accent-primary: #ef4444;
+  --accent-secondary: #fb7185;
+  --border-color: #881337;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #f43f5e;
+  --progress-bg: #881337;
+}
+
+[data-theme="gold"] {
+  --bg-primary: #231403;
+  --bg-secondary: #3b2406;
+  --bg-card: #3b2406;
+  --text-primary: #fffbeb;
+  --text-secondary: #fcd34d;
+  --accent-primary: #fbbf24;
+  --accent-secondary: #f59e0b;
+  --border-color: #92400e;
+  --success: #22c55e;
+  --warning: #facc15;
+  --danger: #ef4444;
+  --progress-bg: #92400e;
+}
+
+[data-theme="aurora"] {
+  --bg-primary: #071a2f;
+  --bg-secondary: #0f2f46;
+  --bg-card: #0f2f46;
+  --text-primary: #ecfeff;
+  --text-secondary: #a5f3fc;
+  --accent-primary: #2dd4bf;
+  --accent-secondary: #38bdf8;
+  --border-color: #155e75;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+  --progress-bg: #155e75;
 }
 
 /* ===========================

@@ -198,31 +198,7 @@ public class DatabaseConfig {
                 )
                 """);
 
-            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_full_name VARCHAR(255) NULL");
-            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_index_number VARCHAR(100) NULL");
-            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS submitted_level VARCHAR(50) NULL");
-            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS latitude DOUBLE NULL");
-            stmt.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS longitude DOUBLE NULL");
-
-            // Ensure columns exist with ALTER TABLE MODIFY for extra safety
-            try {
-                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_full_name VARCHAR(255) NULL");
-            } catch (SQLException ignored) {}
-            try {
-                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_index_number VARCHAR(100) NULL");
-            } catch (SQLException ignored) {}
-            try {
-                stmt.execute("ALTER TABLE attendance MODIFY COLUMN submitted_level VARCHAR(50) NULL");
-            } catch (SQLException ignored) {}
-            try {
-                stmt.execute("ALTER TABLE attendance MODIFY COLUMN latitude DOUBLE NULL");
-            } catch (SQLException ignored) {}
-            try {
-                stmt.execute("ALTER TABLE attendance MODIFY COLUMN longitude DOUBLE NULL");
-            } catch (SQLException ignored) {}
-
-            // Compatibility migration for MySQL versions that do not support
-            // "ADD COLUMN IF NOT EXISTS". This guarantees required columns exist.
+            // Ensure extra columns exist on older tables (uses DatabaseMetaData, works on all MySQL versions)
             ensureColumnExists(conn, "attendance", "submitted_full_name", "VARCHAR(255) NULL");
             ensureColumnExists(conn, "attendance", "submitted_index_number", "VARCHAR(100) NULL");
             ensureColumnExists(conn, "attendance", "submitted_level", "VARCHAR(50) NULL");

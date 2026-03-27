@@ -220,6 +220,14 @@ public class DatabaseConfig {
                 stmt.execute("ALTER TABLE attendance MODIFY COLUMN longitude DOUBLE NULL");
             } catch (SQLException ignored) {}
 
+            // Compatibility migration for MySQL versions that do not support
+            // "ADD COLUMN IF NOT EXISTS". This guarantees required columns exist.
+            ensureColumnExists(conn, "attendance", "submitted_full_name", "VARCHAR(255) NULL");
+            ensureColumnExists(conn, "attendance", "submitted_index_number", "VARCHAR(100) NULL");
+            ensureColumnExists(conn, "attendance", "submitted_level", "VARCHAR(50) NULL");
+            ensureColumnExists(conn, "attendance", "latitude", "DOUBLE NULL");
+            ensureColumnExists(conn, "attendance", "longitude", "DOUBLE NULL");
+
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS student_courses (
                     student_id INT NOT NULL,
@@ -234,6 +242,24 @@ public class DatabaseConfig {
             System.out.println("Database tables initialized successfully.");
         } catch (SQLException e) {
             System.err.println("Database initialization error: " + e.getMessage());
+        }
+    }
+
+    private void ensureColumnExists(Connection conn, String table, String column, String definition) {
+        try {
+            DatabaseMetaData metaData = conn.getMetaData();
+            try (var columns = metaData.getColumns(conn.getCatalog(), null, table, column)) {
+                if (columns.next()) {
+                    return;
+                }
+            }
+
+            try (Statement alterStmt = conn.createStatement()) {
+                alterStmt.execute("ALTER TABLE `" + table + "` ADD COLUMN `" + column + "` " + definition);
+                System.out.printf("Added missing column %s.%s%n", table, column);
+            }
+        } catch (SQLException e) {
+            System.err.printf("Failed ensuring column %s.%s: %s%n", table, column, e.getMessage());
         }
     }
 }

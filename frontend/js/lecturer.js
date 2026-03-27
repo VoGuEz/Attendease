@@ -334,7 +334,8 @@ async function viewAttendance(sessionId) {
   container.innerHTML = `<div class="loading-overlay"><span class="spinner"></span></div>`;
 
   try {
-    const records = await apiRequest(`/attendance/session/${sessionId}`);
+    const rawRecords = await apiRequest(`/attendance/session/${sessionId}`);
+    const records = (rawRecords || []).map(normalizeAttendanceRecord);
     if (!records.length) {
       container.innerHTML = `<h3 style="margin-bottom:16px">Session Attendance</h3><div class="empty-state"><div class="empty-icon">📋</div><h3>No attendance yet</h3><p>No students have joined this session.</p></div>`;
       return;
@@ -380,7 +381,7 @@ function downloadAttendanceCSV(sessionId) {
       ? `"${str.replace(/"/g, '""')}"` : str;
   };
   const lines = ['Student,Index Number,Level,Latitude,Longitude,Join Time,Status'];
-  data.records.forEach(r => {
+  data.records.map(normalizeAttendanceRecord).forEach(r => {
     lines.push([
       escape(r.studentName || 'Unknown'),
       escape(r.submittedIndexNumber || ''),
@@ -401,6 +402,17 @@ function downloadAttendanceCSV(sessionId) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function normalizeAttendanceRecord(record) {
+  return {
+    ...record,
+    studentName: record.studentName ?? record.student_name ?? 'Unknown',
+    submittedIndexNumber: record.submittedIndexNumber ?? record.submitted_index_number ?? '',
+    submittedLevel: record.submittedLevel ?? record.submitted_level ?? '',
+    latitude: record.latitude ?? record.lat ?? null,
+    longitude: record.longitude ?? record.lng ?? null
+  };
 }
 
 async function handleCreateCourse(e) {

@@ -15,7 +15,8 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         AuthHandler authHandler = new AuthHandler();
         CourseHandler courseHandler = new CourseHandler();
@@ -66,7 +67,7 @@ public class Main {
 
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
-        System.out.println("AttendEase server started on port 8080");
+        System.out.println("AttendEase server started on port " + port);
     }
 
     static void addCorsHeaders(HttpExchange exchange) {

@@ -16,9 +16,10 @@ A comprehensive attendance management system built with HTML/CSS/JavaScript fron
 |----------|------------------------------------|
 | Frontend | HTML5, CSS3 (custom properties), Vanilla JS |
 | Backend  | Java 17, com.sun.net.httpserver    |
-| Database | MySQL 8 via XAMPP                  |
+| Database | MySQL 8 via XAMPP (local) / Railway MySQL plugin (cloud) |
 | Auth     | JWT (jjwt 0.12.x) + BCrypt        |
 | Build    | Apache Maven with shade plugin     |
+| Deploy   | Railway (Docker-based)             |
 
 ## Project Structure
 
@@ -177,3 +178,89 @@ Choose a floating background wallpaper in the **Settings → Wallpaper** panel. 
 - Passwords are hashed with BCrypt (never stored in plaintext)
 - All protected endpoints require a valid JWT (`Authorization: Bearer <token>`)
 - CORS headers allow the frontend to connect to the local API
+
+---
+
+## Deploying to Railway
+
+Railway lets you host the Java backend and a MySQL database in the cloud for free (Hobby plan). Follow these steps:
+
+### Step 1 — Create a Railway account
+
+Go to [railway.app](https://railway.app) and sign in with GitHub.
+
+### Step 2 — Create a new project
+
+1. Click **New Project → Deploy from GitHub repo**
+2. Select the **AttendEase** repository
+3. Railway will detect the `railway.json` at the root and use `backend/Dockerfile` to build the service
+
+### Step 3 — Add a MySQL database
+
+1. Inside your project, click **+ New** → **Database** → **Add MySQL**
+2. Railway creates a MySQL 8 instance and automatically injects the following variables into every service in the same project:
+
+   | Variable        | Description          |
+   |-----------------|----------------------|
+   | `MYSQLHOST`     | Database host        |
+   | `MYSQLPORT`     | Database port        |
+   | `MYSQLDATABASE` | Database name        |
+   | `MYSQLUSER`     | Database user        |
+   | `MYSQLPASSWORD` | Database password    |
+
+   The backend is already configured to read these variables — no code changes needed.
+
+### Step 4 — Set required environment variables
+
+In the Railway dashboard, open your **backend service → Variables** tab and add:
+
+| Variable     | Value                                   |
+|--------------|-----------------------------------------|
+| `JWT_SECRET` | A long random string (e.g. 64+ chars)  |
+
+Railway automatically sets `PORT` — the backend reads it on startup.
+
+### Step 5 — Deploy
+
+Click **Deploy** (or push a new commit — Railway auto-deploys on every push to `main`).
+
+Watch the build logs; the backend prints:
+
+```
+Database tables initialized successfully.
+AttendEase server started on port <PORT>
+```
+
+### Step 6 — Update the frontend API URL
+
+Open `frontend/js/api.js` and update `BASE_URL` to point to your Railway backend URL:
+
+```js
+// Replace with your Railway backend URL (Settings → Networking → Public URL)
+const BASE_URL = 'https://your-app.up.railway.app';
+```
+
+Then host the `frontend/` folder on any static host (GitHub Pages, Netlify, Vercel, Railway Static, etc.).
+
+### Environment Variables Reference
+
+See [`.env.example`](.env.example) for a full list of supported variables.
+
+### Local Docker Test (optional)
+
+Before pushing to Railway you can test the Docker image locally:
+
+```bash
+# Build
+docker build -t attendease-backend ./backend
+
+# Run (requires a local MySQL instance)
+docker run -p 8080:8080 \
+  -e DB_HOST=host.docker.internal \
+  -e DB_PORT=3306 \
+  -e DB_NAME=attendease \
+  -e DB_USER=root \
+  -e DB_PASSWORD= \
+  -e JWT_SECRET=local-secret \
+  attendease-backend
+```

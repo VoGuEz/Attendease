@@ -1,5 +1,9 @@
 package com.attendease.config;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -7,15 +11,19 @@ import java.sql.Statement;
 
 public class DatabaseConfig {
 
-    // DB connection settings can be overridden via environment variables for production.
-    // Supports Railway MySQL plugin variables (MYSQLHOST, MYSQLPORT, MYSQLDATABASE,
-    // MYSQLUSER, MYSQLPASSWORD) as well as generic DB_* variables.
-    // Defaults match a standard XAMPP local setup (root user, no password).
-    private static final String HOST     = getEnv("DB_HOST",     "MYSQLHOST",     "localhost");
-    private static final int    PORT     = Integer.parseInt(getEnv("DB_PORT", "MYSQLPORT", "3306"));
-    private static final String DATABASE = getEnv("DB_NAME",     "MYSQLDATABASE", "attendease");
-    private static final String USER     = getEnv("DB_USER",     "MYSQLUSER",     "root");
+    private static final String RAW_DB_URL = firstNonEmpty(
+            System.getenv("DB_URL"),
+            System.getenv("DATABASE_URL"),
+            System.getenv("MYSQL_URL")
+    );
+
+    private static final String HOST = getEnv("DB_HOST", "MYSQLHOST", "localhost");
+    private static final int PORT = Integer.parseInt(getEnv("DB_PORT", "MYSQLPORT", "3306"));
+    private static final String DATABASE = getEnv("DB_NAME", "MYSQLDATABASE", "attendease");
+    private static final String USER = getEnv("DB_USER", "MYSQLUSER", "root");
     private static final String PASSWORD = getEnv("DB_PASSWORD", "MYSQLPASSWORD", "");
+
+    private static final DbConnectionInfo DB_INFO = resolveConnectionInfo();
 
     /** Returns the value of {@code primary} env var, falling back to {@code fallback}, then {@code defaultValue}. */
     private static String getEnv(String primary, String fallback, String defaultValue) {
@@ -26,14 +34,88 @@ public class DatabaseConfig {
         return defaultValue;
     }
 
-    private static final String URL = String.format(
-            "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-            HOST, PORT, DATABASE
-    );
+    private static String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static DbConnectionInfo resolveConnectionInfo() {
+        if (RAW_DB_URL == null) {
+            String url = String.format(
+                    "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                    HOST, PORT, DATABASE
+            );
+            String urlNoDb = String.format(
+                    "jdbc:mysql://%s:%d?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                    HOST, PORT
+            );
+            return new DbConnectionInfo(url, urlNoDb, USER, PASSWORD, DATABASE, HOST, PORT, "DB_* or MYSQL* vars");
+        }
+
+        try {
+            String normalized = RAW_DB_URL.startsWith("jdbc:") ? RAW_DB_URL.substring(5) : RAW_DB_URL;
+            URI uri = new URI(normalized);
+
+            String host = uri.getHost() != null ? uri.getHost() : HOST;
+            int port = uri.getPort() > 0 ? uri.getPort() : PORT;
+
+            String path = uri.getPath();
+            String database = (path != null && path.length() > 1) ? path.substring(1) : DATABASE;
+
+            String resolvedUser = USER;
+            String resolvedPassword = PASSWORD;
+            String userInfo = uri.getUserInfo();
+            if (userInfo != null && !userInfo.isBlank()) {
+                String[] parts = userInfo.split(":", 2);
+                resolvedUser = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
+                if (parts.length > 1) {
+                    resolvedPassword = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
+                }
+            }
+
+            String query = uri.getRawQuery();
+            String suffix = (query == null || query.isBlank())
+                    ? "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+                    : "?" + query;
+
+            String url = String.format("jdbc:mysql://%s:%d/%s%s", host, port, database, suffix);
+            String urlNoDb = String.format("jdbc:mysql://%s:%d%s", host, port, suffix);
+            return new DbConnectionInfo(url, urlNoDb, resolvedUser, resolvedPassword, database, host, port,
+                    "DB_URL / DATABASE_URL / MYSQL_URL");
+        } catch (URISyntaxException e) {
+            System.err.println("Invalid database URL format, falling back to DB_* variables: " + e.getMessage());
+            String url = String.format(
+                    "jdbc:mysql://%s:%d/%s?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                    HOST, PORT, DATABASE
+            );
+            String urlNoDb = String.format(
+                    "jdbc:mysql://%s:%d?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                    HOST, PORT
+            );
+            return new DbConnectionInfo(url, urlNoDb, USER, PASSWORD, DATABASE, HOST, PORT, "DB_* fallback");
+        }
+    }
+
+    private record DbConnectionInfo(
+            String url,
+            String urlNoDb,
+            String user,
+            String password,
+            String database,
+            String host,
+            int port,
+            String source
+    ) {}
 
     private static DatabaseConfig instance;
 
     private DatabaseConfig() {
+        System.out.printf("DB target: host=%s port=%d db=%s source=%s%n",
+                DB_INFO.host(), DB_INFO.port(), DB_INFO.database(), DB_INFO.source());
         initializeDatabase();
     }
 
@@ -45,23 +127,19 @@ public class DatabaseConfig {
     }
 
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return DriverManager.getConnection(DB_INFO.url(), DB_INFO.user(), DB_INFO.password());
     }
 
     private void initializeDatabase() {
-        String createDb = "CREATE DATABASE IF NOT EXISTS " + DATABASE;
-        String urlNoDb = String.format(
-                "jdbc:mysql://%s:%d?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-                HOST, PORT
-        );
-        try (Connection conn = DriverManager.getConnection(urlNoDb, USER, PASSWORD);
+        String createDb = "CREATE DATABASE IF NOT EXISTS " + DB_INFO.database();
+        try (Connection conn = DriverManager.getConnection(DB_INFO.urlNoDb(), DB_INFO.user(), DB_INFO.password());
              Statement stmt = conn.createStatement()) {
             stmt.execute(createDb);
         } catch (SQLException e) {
             System.err.println("Could not create database: " + e.getMessage());
         }
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(DB_INFO.url(), DB_INFO.user(), DB_INFO.password());
              Statement stmt = conn.createStatement()) {
 
             stmt.execute("""

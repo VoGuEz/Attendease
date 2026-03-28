@@ -40,34 +40,4 @@ public class AuthService {
         return jwtUtil.generateToken(user);
     }
 
-        User user = optUser.get();
-        String token = UUID.randomUUID().toString();
-        // Token valid for 15 minutes
-        Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + 15 * 60 * 1000);
-        userRepository.saveResetToken(user.getId(), token, expiresAt);
-
-        // Send the reset code via email
-        emailService.sendResetCode(normalizedEmail, token, user.getFullName());
-
-        return response;
-    }
-
-    public Map<String, Object> resetPassword(String token, String newPassword) throws Exception {
-        if (token == null || token.isBlank()) throw new IllegalArgumentException("Reset token is required");
-        if (newPassword == null || newPassword.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
-
-        Optional<int[]> result = userRepository.findValidResetToken(token);
-        if (result.isEmpty()) throw new IllegalArgumentException("Invalid or expired reset token");
-
-        int userId = result.get()[0];
-        int tokenId = result.get()[1];
-
-        String hash = PasswordUtil.hashPassword(newPassword);
-        userRepository.updatePassword(userId, hash);
-        userRepository.markResetTokenUsed(tokenId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Password reset successfully. You can now log in with your new password.");
-        return response;
-    }
 }

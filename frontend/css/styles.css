@@ -954,9 +954,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 .theme-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -965,7 +963,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   gap: 8px;
   min-width: 200px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  z-index: 300;
+  z-index: 9999;
 }
 
 .theme-dropdown.open {

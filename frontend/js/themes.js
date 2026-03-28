@@ -69,7 +69,13 @@ function renderThemeSwitcher(containerId) {
 
 function toggleThemeDropdown(btn) {
   const dropdown = document.getElementById('theme-dropdown');
-  if (dropdown) dropdown.classList.toggle('open');
+  if (!dropdown) return;
+  dropdown.classList.toggle('open');
+  if (dropdown.classList.contains('open')) {
+    const rect = btn.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + 8) + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+  }
 }
 
 document.addEventListener('click', (e) => {

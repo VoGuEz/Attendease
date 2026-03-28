@@ -706,9 +706,6 @@ function showSection(name) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
-  const section = document.getElementById(`section-${name}`);
-  if (section) section.classList.add('active');
-}
 
 function openModal(id) {
   document.getElementById(id)?.classList.add('open');

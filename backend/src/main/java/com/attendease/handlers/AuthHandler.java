@@ -1,27 +1,3 @@
-    public void handleVerifyEmail(HttpExchange exchange) throws IOException {
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            ResponseUtil.sendError(exchange, 405, "Method not allowed");
-            return;
-        }
-        try {
-            String body = ResponseUtil.readBody(exchange);
-            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            String email = getStringOrNull(json, "email");
-            String code = getStringOrNull(json, "code");
-            if (email == null || code == null) {
-                ResponseUtil.sendError(exchange, 400, "Email and code are required");
-                return;
-            }
-            boolean ok = authService.verifyEmailCode(email, code);
-            if (ok) {
-                ResponseUtil.sendResponse(exchange, 200, Map.of("message", "Email verified successfully. You can now sign in."));
-            } else {
-                ResponseUtil.sendError(exchange, 400, "Invalid or expired verification code");
-            }
-        } catch (Exception e) {
-            ResponseUtil.sendError(exchange, 500, "Internal server error: " + e.getMessage());
-        }
-    }
 package com.attendease.handlers;
 
 import com.attendease.models.User;

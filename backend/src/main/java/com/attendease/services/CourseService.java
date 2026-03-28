@@ -23,7 +23,7 @@ public class CourseService {
     public List<Course> getCoursesForLecturer(int lecturerId) throws SQLException {
         List<Course> courses = courseRepository.findByLecturerId(lecturerId);
         for (Course c : courses) {
-            int count = courseRepository.countEnrolledStudents(c.getId());
+            courseRepository.countEnrolledStudents(c.getId()); // call for side effects if needed
             c.setDescription(c.getDescription() != null ? c.getDescription() : "");
         }
         return courses;

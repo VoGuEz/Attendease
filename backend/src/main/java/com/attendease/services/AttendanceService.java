@@ -6,7 +6,7 @@ import com.attendease.repositories.AttendanceRepository;
 import com.attendease.repositories.SessionRepository;
 
 import java.sql.SQLException;
-import java.sql.Time;
+
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;

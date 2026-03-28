@@ -5,91 +5,50 @@ import com.attendease.repositories.UserRepository;
 import com.attendease.utils.JwtUtil;
 import com.attendease.utils.PasswordUtil;
 
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 public class AuthService {
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordUtil passwordUtil;
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\\.)+[A-Za-z]{2,63}$"
-    );
-        private static final Set<String> RESERVED_EMAIL_DOMAINS = Set.of(
-            "example.com",
-            "example.org",
-            "example.net",
-            "localhost",
-            "localdomain"
-        );
-        private static final Set<String> RESERVED_EMAIL_SUFFIXES = Set.of(
-            ".example",
-            ".invalid",
-            ".localhost",
-            ".test"
-        );
+    public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordUtil passwordUtil) {
+        this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
+        this.passwordUtil = passwordUtil;
+    }
 
-    private final UserRepository userRepository = new UserRepository();
-    private final EmailService emailService = new EmailService();
-
-    // In-memory store for verification codes (for demo; use DB/Redis in production)
-    private static final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
-
-    public Map<String, Object> register(String email, String password, String fullName, String role) throws Exception {
-        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
-        String normalizedEmail = email.trim().toLowerCase();
-        if (!isAllowedEmail(normalizedEmail)) {
-            throw new IllegalArgumentException(
-                    "Enter a valid email address with a real public domain (for example @gmail.com, @yahoo.com, school.edu, or company.com)."
-            );
+    public User register(String name, String email, String password, String role) {
+        if (userRepository.findByEmail(email) != null) {
+            throw new IllegalArgumentException("Email already registered");
         }
-        if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
-        if (fullName == null || fullName.isBlank()) throw new IllegalArgumentException("Full name is required");
-        if (!role.equals("student") && !role.equals("lecturer")) throw new IllegalArgumentException("Role must be student or lecturer");
-
-        Optional<User> existing = userRepository.findByEmail(normalizedEmail);
-        if (existing.isPresent()) throw new IllegalArgumentException("Email already registered");
-
-        String hash = PasswordUtil.hashPassword(password);
-        User user = new User(normalizedEmail, hash, fullName.trim(), role);
-        user.setEmailVerified(false);
+        String hashed = passwordUtil.hashPassword(password);
+        User user = new User(UUID.randomUUID().toString(), name, email, hashed, role);
         userRepository.save(user);
+        return user;
+    }
 
-        // Generate verification code
-        String code = String.format("%06d", new Random().nextInt(1_000_000));
-        verificationCodes.put(normalizedEmail, code);
-        if (emailService.isEnabled()) {
-            emailService.sendVerificationCode(normalizedEmail, code, fullName);
-        } else {
-            System.out.println("[AuthService] Verification code for " + normalizedEmail + ": " + code);
+    public User login(String email, String password) {
+        User user = userRepository.findByEmail(email);
+        if (user == null || !passwordUtil.verifyPassword(password, user.getPassword())) {
+            throw new IllegalArgumentException("Invalid email or password");
         }
+        return user;
+    }
 
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("message", "Verification code sent to your email. Please verify to complete registration.");
-        resp.put("email", normalizedEmail);
-        return resp;
-        public boolean verifyEmailCode(String email, String code) throws Exception {
-            String normalizedEmail = email.trim().toLowerCase();
-            String expected = verificationCodes.get(normalizedEmail);
-            if (expected != null && expected.equals(code)) {
-                Optional<User> optUser = userRepository.findByEmail(normalizedEmail);
-                if (optUser.isPresent()) {
-                    User user = optUser.get();
-                    user.setEmailVerified(true);
-                    // Update user in DB (implement update method if needed)
-                    userRepository.setEmailVerified(normalizedEmail, true);
-                    verificationCodes.remove(normalizedEmail);
-                    return true;
-                }
+    public String generateToken(User user) {
+        return jwtUtil.generateToken(user);
+    }
+}
+            if (optUser.isPresent()) {
+                User user = optUser.get();
+                user.setEmailVerified(true);
+                userRepository.setEmailVerified(normalizedEmail, true);
+                verificationCodes.remove(normalizedEmail);
+                return true;
             }
-            return false;
         }
+        return false;
     }
 
     public Map<String, Object> login(String email, String password) throws Exception {

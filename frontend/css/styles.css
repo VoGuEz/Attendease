@@ -395,6 +395,13 @@ textarea { resize: vertical; min-height: 80px; }
   margin-bottom: 28px;
 }
 
+.auth-logo-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
 .auth-logo .emoji {
   font-size: 48px;
   display: block;
@@ -1055,6 +1062,20 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   max-width: 480px;
   width: 100%;
   text-align: center;
+}
+
+.welcome-logo-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+
+.navbar-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 .welcome-card .emoji { font-size: 64px; display: block; margin-bottom: 16px; }

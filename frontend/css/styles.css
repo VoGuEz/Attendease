@@ -350,7 +350,7 @@ textarea { resize: vertical; min-height: 80px; }
   color: var(--accent-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-decoration: none;
   flex: 1;
 }
@@ -1072,10 +1072,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 .navbar-logo-img {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
   vertical-align: middle;
+  border-radius: 6px;
 }
 
 .welcome-card .emoji { font-size: 64px; display: block; margin-bottom: 16px; }

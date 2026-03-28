@@ -18,12 +18,12 @@ public class AuthService {
         this.passwordUtil = passwordUtil;
     }
 
-    public User register(String name, String email, String password, String role) {
+    public User register(String email, String password, String fullName, String role) {
         if (userRepository.findByEmail(email) != null) {
             throw new IllegalArgumentException("Email already registered");
         }
         String hashed = passwordUtil.hashPassword(password);
-        User user = new User(UUID.randomUUID().toString(), name, email, hashed, role);
+        User user = new User(email, hashed, fullName, role);
         userRepository.save(user);
         return user;
     }

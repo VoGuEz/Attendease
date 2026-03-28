@@ -2,6 +2,7 @@ package com.attendease.services;
 
 import javax.mail.*;
 import javax.mail.internet.*;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 
 public class EmailService {
@@ -45,13 +46,13 @@ public class EmailService {
         try {
             sendEmail(toEmail, subject, htmlBody);
             System.out.println("[EmailService] Reset code sent to " + toEmail);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             System.err.println("[EmailService] Failed to send email to " + toEmail + ": " + e.getMessage());
             throw new RuntimeException("Failed to send reset email. Please try again later.");
         }
     }
 
-    private void sendEmail(String to, String subject, String htmlBody) throws MessagingException {
+    private void sendEmail(String to, String subject, String htmlBody) throws MessagingException, UnsupportedEncodingException {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");

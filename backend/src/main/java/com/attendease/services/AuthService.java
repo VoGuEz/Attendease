@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -36,6 +38,9 @@ public class AuthService {
     private final UserRepository userRepository = new UserRepository();
     private final EmailService emailService = new EmailService();
 
+    // In-memory store for verification codes (for demo; use DB/Redis in production)
+    private static final Map<String, String> verificationCodes = new ConcurrentHashMap<>();
+
     public Map<String, Object> register(String email, String password, String fullName, String role) throws Exception {
         if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
         String normalizedEmail = email.trim().toLowerCase();
@@ -53,10 +58,38 @@ public class AuthService {
 
         String hash = PasswordUtil.hashPassword(password);
         User user = new User(normalizedEmail, hash, fullName.trim(), role);
+        user.setEmailVerified(false);
         userRepository.save(user);
 
-        String token = JwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
-        return buildResponse(user, token);
+        // Generate verification code
+        String code = String.format("%06d", new Random().nextInt(1_000_000));
+        verificationCodes.put(normalizedEmail, code);
+        if (emailService.isEnabled()) {
+            emailService.sendVerificationCode(normalizedEmail, code, fullName);
+        } else {
+            System.out.println("[AuthService] Verification code for " + normalizedEmail + ": " + code);
+        }
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("message", "Verification code sent to your email. Please verify to complete registration.");
+        resp.put("email", normalizedEmail);
+        return resp;
+        public boolean verifyEmailCode(String email, String code) throws Exception {
+            String normalizedEmail = email.trim().toLowerCase();
+            String expected = verificationCodes.get(normalizedEmail);
+            if (expected != null && expected.equals(code)) {
+                Optional<User> optUser = userRepository.findByEmail(normalizedEmail);
+                if (optUser.isPresent()) {
+                    User user = optUser.get();
+                    user.setEmailVerified(true);
+                    // Update user in DB (implement update method if needed)
+                    userRepository.setEmailVerified(normalizedEmail, true);
+                    verificationCodes.remove(normalizedEmail);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     public Map<String, Object> login(String email, String password) throws Exception {
@@ -67,6 +100,9 @@ public class AuthService {
         if (optUser.isEmpty()) throw new IllegalArgumentException("Invalid email or password");
 
         User user = optUser.get();
+        if (!user.isEmailVerified()) {
+            throw new IllegalArgumentException("Please verify your email before signing in.");
+        }
         if (!PasswordUtil.checkPassword(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }

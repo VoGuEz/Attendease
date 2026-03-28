@@ -9,6 +9,7 @@ public class User {
     private String fullName;
     private String role;
     private Timestamp createdAt;
+    private boolean emailVerified;
 
     public User() {}
 
@@ -17,7 +18,10 @@ public class User {
         this.passwordHash = passwordHash;
         this.fullName = fullName;
         this.role = role;
+        this.emailVerified = false;
     }
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

@@ -1,3 +1,12 @@
+    public void setEmailVerified(String email, boolean verified) throws SQLException {
+        String sql = "UPDATE users SET email_verified = ? WHERE email = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setBoolean(1, verified);
+            stmt.setString(2, email);
+            stmt.executeUpdate();
+        }
+    }
 package com.attendease.repositories;
 
 import com.attendease.config.DatabaseConfig;
@@ -15,13 +24,14 @@ public class UserRepository {
     }
 
     public User save(User user) throws SQLException {
-        String sql = "INSERT INTO users (email, password_hash, full_name, role) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO users (email, password_hash, full_name, role, email_verified) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getPasswordHash());
             stmt.setString(3, user.getFullName());
             stmt.setString(4, user.getRole());
+            stmt.setBoolean(5, user.isEmailVerified());
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
@@ -48,6 +58,18 @@ public class UserRepository {
         String sql = "SELECT * FROM users WHERE id = ?";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+                private User mapRow(ResultSet rs) throws SQLException {
+                    User user = new User(
+                        rs.getString("email"),
+                        rs.getString("password_hash"),
+                        rs.getString("full_name"),
+                        rs.getString("role")
+                    );
+                    user.setId(rs.getInt("id"));
+                    user.setCreatedAt(rs.getTimestamp("created_at"));
+                    user.setEmailVerified(rs.getBoolean("email_verified"));
+                    return user;
+                }
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {

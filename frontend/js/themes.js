@@ -33,6 +33,9 @@ const WALLPAPERS = [
   { id: 'crystals',  label: 'Crystals',   emoji: '💎',  preview: '💎' },
   { id: 'flames',    label: 'Flames',     emoji: '🔥',  preview: '🔥' },
   { id: 'planets',   label: 'Planets',    emoji: '🪐',  preview: '🪐' },
+  { id: 'cherry',    label: 'Cherry Blossom', emoji: '🌸', preview: '🌸' },
+  { id: 'aurora',    label: 'Aurora',     emoji: '✨',  preview: '✨' },
+  { id: 'ocean',     label: 'Ocean Wave', emoji: '🌊',  preview: '🌊' },
 ];
 
 function getCurrentTheme() {

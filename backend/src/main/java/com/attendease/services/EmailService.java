@@ -47,8 +47,9 @@ public class EmailService {
             sendEmail(toEmail, subject, htmlBody);
             System.out.println("[EmailService] Reset code sent to " + toEmail);
         } catch (Exception e) {
-            System.err.println("[EmailService] Failed to send email to " + toEmail + ": " + e.getMessage());
-            throw new RuntimeException("Failed to send reset email. Please try again later.");
+            System.err.println("[EmailService] Failed to send email to " + toEmail + ": " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
     }
 

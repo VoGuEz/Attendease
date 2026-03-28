@@ -157,7 +157,9 @@ public class AuthHandler {
         } catch (IllegalArgumentException e) {
             ResponseUtil.sendError(exchange, 400, e.getMessage());
         } catch (Exception e) {
-            ResponseUtil.sendError(exchange, 500, "Internal server error");
+            System.err.println("[AuthHandler] Reset request failed: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            ResponseUtil.sendError(exchange, 500, "Failed to send reset email: " + e.getMessage());
         }
     }
 

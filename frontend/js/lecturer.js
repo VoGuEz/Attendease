@@ -164,11 +164,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('[data-scroll]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const target = document.getElementById(link.dataset.scroll);
-      if (target) {
-        closeMobileMenu();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      closeMobileMenu();
+      // Show overview section first, then scroll to the anchor
+      showSection('overview');
+      setTimeout(() => {
+        const target = document.getElementById(link.dataset.scroll);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     });
   });
 
@@ -678,13 +680,8 @@ function isMobile() {
 }
 
 function syncSectionLayout() {
-  const mobileSinglePage = isMobile();
-  document.body.classList.toggle('mobile-single-page', mobileSinglePage);
-
-  if (mobileSinglePage) {
-    document.querySelectorAll('.section').forEach(s => s.classList.add('active'));
-    return;
-  }
+  const mobile = isMobile();
+  document.body.classList.toggle('mobile-single-page', mobile);
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const currentSection = document.getElementById(`section-${activeSection}`) || document.getElementById('section-overview');
@@ -701,13 +698,14 @@ function showSection(name) {
   const sectionLabels = { overview: 'Dashboard', courses: 'My Courses', sessions: 'Sessions', students: 'Students', settings: 'Settings' };
   updateBreadcrumb({ label: sectionLabels[name] || name });
 
-  if (isMobile()) {
-    const section = document.getElementById(`section-${name}`);
-    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const section = document.getElementById(`section-${name}`);
+  if (section) section.classList.add('active');
+
+  if (isMobile()) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
   const section = document.getElementById(`section-${name}`);
   if (section) section.classList.add('active');
 }

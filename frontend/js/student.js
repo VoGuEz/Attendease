@@ -580,13 +580,8 @@ function isMobile() {
 }
 
 function syncSectionLayout() {
-  const mobileSinglePage = isMobile();
-  document.body.classList.toggle('mobile-single-page', mobileSinglePage);
-
-  if (mobileSinglePage) {
-    document.querySelectorAll('.section').forEach(s => s.classList.add('active'));
-    return;
-  }
+  const mobile = isMobile();
+  document.body.classList.toggle('mobile-single-page', mobile);
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const currentSection = document.getElementById(`section-${activeSection}`) || document.getElementById('section-overview');
@@ -602,15 +597,13 @@ function showSection(name) {
   const sectionLabels = { overview: 'Overview', courses: 'My Courses', active: 'Active Sessions', settings: 'Settings' };
   updateBreadcrumb({ label: sectionLabels[name] || name });
 
-  if (isMobile()) {
-    const section = document.getElementById(`section-${name}`);
-    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const section = document.getElementById(`section-${name}`);
   if (section) section.classList.add('active');
+
+  if (isMobile()) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function showLoading(id, loading) {

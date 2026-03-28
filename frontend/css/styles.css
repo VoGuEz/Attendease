@@ -1307,8 +1307,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   }
 
   body.mobile-single-page .section {
-    display: block;
+    display: none;
     margin-bottom: 24px;
+  }
+
+  body.mobile-single-page .section.active {
+    display: block;
   }
 
   body.mobile-single-page .section:last-child {
@@ -1414,12 +1418,15 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     gap: 8px;
   }
 
-  /* Show ALL sections on one scrollable page on mobile */
+  /* Sections: only active section visible on mobile */
   .section {
-    display: block !important;
+    display: none;
     margin-bottom: 16px;
     padding-bottom: 20px;
     border-bottom: 1px solid var(--border-color);
+  }
+  .section.active {
+    display: block;
   }
   .section:last-child {
     border-bottom: none;

@@ -8,7 +8,15 @@ const THEMES = [
   { id: 'sunset', label: 'Sunset', color: '#f97316', bg: '#1c0505' },
   { id: 'ruby',   label: 'Ruby',   color: '#ef4444', bg: '#2a0b14' },
   { id: 'gold',   label: 'Gold',   color: '#fbbf24', bg: '#231403' },
-  { id: 'aurora', label: 'Aurora', color: '#2dd4bf', bg: '#071a2f' },
+  { id: 'aurora',    label: 'Aurora',    color: '#2dd4bf', bg: '#071a2f' },
+  { id: 'galaxy',    label: 'Galaxy',    color: '#8b5cf6', bg: '#0a0015' },
+  { id: 'sakura',    label: 'Sakura',    color: '#f472b6', bg: '#1f0a14' },
+  { id: 'midnight',  label: 'Midnight',  color: '#38bdf8', bg: '#020617' },
+  { id: 'lavender',  label: 'Lavender',  color: '#c084fc', bg: '#1a1025' },
+  { id: 'mint',      label: 'Mint',      color: '#34d399', bg: '#041f1a' },
+  { id: 'arctic',    label: 'Arctic',    color: '#0284c7', bg: '#f0f9ff' },
+  { id: 'neon',      label: 'Neon',      color: '#e879f9', bg: '#0a0a0a' },
+  { id: 'copper',    label: 'Copper',    color: '#d97706', bg: '#1a0e08' },
 ];
 
 const WALLPAPERS = [

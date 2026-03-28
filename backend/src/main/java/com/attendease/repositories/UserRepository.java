@@ -1,12 +1,3 @@
-    public void setEmailVerified(String email, boolean verified) throws SQLException {
-        String sql = "UPDATE users SET email_verified = ? WHERE email = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setBoolean(1, verified);
-            stmt.setString(2, email);
-            stmt.executeUpdate();
-        }
-    }
 package com.attendease.repositories;
 
 import com.attendease.models.User;

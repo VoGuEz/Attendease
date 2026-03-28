@@ -1,9 +1,3 @@
-        // ...existing code...
-                server.createContext("/api/auth/verify", exchange -> {
-                    addCorsHeaders(exchange);
-                    if (handlePreflight(exchange)) return;
-                    authHandler.handleVerifyEmail(exchange);
-                });
 package com.attendease;
 
 import com.attendease.handlers.AttendanceHandler;

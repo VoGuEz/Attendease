@@ -110,7 +110,7 @@ public class EmailService {
              + "</div></body></html>";
     }
 
-    private static String escapeHtml(String text) {
+      String escapeHtml(String text) {
         if (text == null) return "";
         return text.replace("&", "&amp;")
                    .replace("<", "&lt;")

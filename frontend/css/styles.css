@@ -672,6 +672,45 @@ textarea { resize: vertical; min-height: 80px; }
   text-align: center;
 }
 
+/* Sidebar user info (visible on mobile) */
+.sidebar-user-info {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+  }
+
+  .sidebar-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* Main content */
 .main-content {
   flex: 1;
@@ -1215,15 +1254,51 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   z-index: 100;
 }
 
+/* Hamburger menu - hidden on desktop */
+.hamburger-menu {
+  display: none;
+}
+
 /* ===========================
    Responsive
    =========================== */
 
 @media (max-width: 768px) {
-  body.mobile-single-page .sidebar,
-  body.mobile-single-page .mobile-overlay,
-  body.mobile-single-page .hamburger-menu {
-    display: none !important;
+  body.mobile-single-page .sidebar {
+    display: none;
+    position: fixed;
+    width: 260px;
+    height: calc(100vh - 64px);
+    top: 64px;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    padding: 0 0 24px;
+    z-index: 99;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+  }
+
+  body.mobile-single-page .sidebar.open {
+    display: block;
+    transform: translateX(0);
+  }
+
+  body.mobile-single-page .mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 98;
+  }
+
+  body.mobile-single-page .mobile-overlay.open {
+    display: block;
   }
 
   body.mobile-single-page .main-content {
@@ -1321,7 +1396,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   }
 
   .user-badge {
-    display: none;
+    display: none !important;
+  }
+
+  .navbar-right #logout-btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 
   .main-content {
@@ -1429,11 +1509,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   .item-card-footer .btn {
     width: 100%;
   }
-}
-
-/* Hamburger menu - hidden on desktop */
-.hamburger-menu {
-  display: none;
 }
 
 .text-success { color: var(--success); }

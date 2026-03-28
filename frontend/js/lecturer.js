@@ -123,6 +123,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setAvatarBadge(currentUser);
   renderThemeSwitcher('theme-switcher-container');
 
+  // Populate sidebar user info for mobile
+  const sidebarUserName = document.getElementById('sidebar-user-name');
+  const sidebarAvatar = document.getElementById('sidebar-avatar');
+  if (sidebarUserName) sidebarUserName.textContent = currentUser.fullName;
+  if (sidebarAvatar) {
+    const initials = (currentUser.fullName || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    sidebarAvatar.textContent = initials;
+  }
+
   // Mobile menu functionality
   const hamburgerBtn = document.getElementById('hamburger-btn');
   const sidebar = document.getElementById('sidebar');
@@ -148,6 +157,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       e.preventDefault();
       showSection(link.dataset.section);
       closeMobileMenu();
+    });
+  });
+
+  // Scroll-to links for mobile hamburger menu
+  document.querySelectorAll('[data-scroll]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.getElementById(link.dataset.scroll);
+      if (target) {
+        closeMobileMenu();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
   });
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Dashboard – AttendEase</title>
-  <link rel="stylesheet" href="css/styles.css?v=2" />
+  <link rel="stylesheet" href="css/styles.css?v=3" />
   <link rel="icon" type="image/png" href="images/logo.png" />
   <style>
     .location-chip {
@@ -46,15 +46,19 @@
     
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
+      <div class="sidebar-user-info" id="sidebar-user-info">
+        <span class="sidebar-user-avatar" id="sidebar-avatar"></span>
+        <span class="sidebar-user-name" id="sidebar-user-name">...</span>
+      </div>
       <ul class="sidebar-nav">
         <li class="active">
           <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>
         </li>
         <li>
-          <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
+          <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions <span class="notification-dot" id="notif-dot-active" style="display:none"></span></a>
         </li>
         <li>
-          <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions <span class="notification-dot" id="notif-dot-active" style="display:none"></span></a>
+          <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
         </li>
         <li>
           <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>

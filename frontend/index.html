@@ -51,12 +51,8 @@
           </div>
           <button type="submit" class="btn" style="width:100%; margin-top:8px">Send Reset Code</button>
         </form>
-        <div id="reset-token-display" style="display:none; margin-top:16px; padding:16px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px;">
-          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">Your reset code (valid for 15 minutes):</p>
-          <code id="reset-token-value" style="word-break:break-all; font-size:13px; color:var(--accent-primary);"></code>
-          <button class="btn btn-sm" style="margin-top:12px; width:100%;" onclick="showResetStep2()">Enter Reset Code</button>
-        </div>
         <div class="auth-footer" style="margin-top:16px;">
+          <a href="#" id="already-have-code" style="display:block; margin-bottom:8px; font-size:14px;">Already have a code?</a>
           <a href="#" id="back-to-login-1">Back to Sign In</a>
         </div>
       </div>
@@ -118,6 +114,11 @@
       e.preventDefault();
       backToLogin();
     });
+
+    document.getElementById('already-have-code').addEventListener('click', (e) => {
+      e.preventDefault();
+      showResetStep2();
+    });
     document.getElementById('back-to-login-2').addEventListener('click', (e) => {
       e.preventDefault();
       backToLogin();
@@ -134,9 +135,6 @@
     function showResetStep2() {
       resetRequestSection.style.display = 'none';
       resetPasswordSection.style.display = 'block';
-      // Pre-fill token from step 1
-      const tokenVal = document.getElementById('reset-token-value').textContent;
-      if (tokenVal) document.getElementById('reset-token-input').value = tokenVal;
     }
 
     function showResetMsg(id, text, type) {
@@ -155,11 +153,9 @@
       btn.innerHTML = '<span class="spinner"></span>';
       try {
         const data = await apiRequest('/auth/request-reset', 'POST', { email });
-        showResetMsg('reset-request-msg', data.message, 'success');
-        if (data.resetToken) {
-          document.getElementById('reset-token-value').textContent = data.resetToken;
-          document.getElementById('reset-token-display').style.display = 'block';
-        }
+        showResetMsg('reset-request-msg', 'A reset code has been sent to your email. Check your inbox (and spam folder).', 'success');
+        // Auto-navigate to step 2 after a short delay
+        setTimeout(() => showResetStep2(), 2500);
       } catch (err) {
         showResetMsg('reset-request-msg', err.message, 'error');
       } finally {

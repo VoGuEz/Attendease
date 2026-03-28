@@ -34,6 +34,7 @@ public class AuthService {
         );
 
     private final UserRepository userRepository = new UserRepository();
+    private final EmailService emailService = new EmailService();
 
     public Map<String, Object> register(String email, String password, String fullName, String role) throws Exception {
         if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
@@ -118,7 +119,7 @@ public class AuthService {
         Optional<User> optUser = userRepository.findByEmail(normalizedEmail);
         // Always return success to prevent email enumeration
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "If an account with that email exists, a reset code has been generated.");
+        response.put("message", "If an account with that email exists, a reset code has been sent to your email.");
 
         if (optUser.isEmpty()) return response;
 
@@ -128,7 +129,9 @@ public class AuthService {
         Timestamp expiresAt = new Timestamp(System.currentTimeMillis() + 15 * 60 * 1000);
         userRepository.saveResetToken(user.getId(), token, expiresAt);
 
-        response.put("resetToken", token);
+        // Send the reset code via email
+        emailService.sendResetCode(normalizedEmail, token, user.getFullName());
+
         return response;
     }
 

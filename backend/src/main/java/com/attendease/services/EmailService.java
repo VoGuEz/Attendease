@@ -55,10 +55,24 @@ public class EmailService {
     private void sendEmail(String to, String subject, String htmlBody) throws MessagingException, UnsupportedEncodingException {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", smtpHost);
         props.put("mail.smtp.port", String.valueOf(smtpPort));
         props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        props.put("mail.smtp.ssl.trust", smtpHost);
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+
+        if (smtpPort == 465) {
+            props.put("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+            props.put("mail.smtp.ssl.enable", "true");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
+        }
+
+        System.out.println("[EmailService] Connecting to " + smtpHost + ":" + smtpPort + " to send email to " + to);
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override

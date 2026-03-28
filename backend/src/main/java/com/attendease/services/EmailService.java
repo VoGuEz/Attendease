@@ -1,32 +1,32 @@
 package com.attendease.services;
 
-import javax.mail.*;
-import javax.mail.internet.*;
-import java.io.UnsupportedEncodingException;
-import java.util.Properties;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class EmailService {
 
-    private final String smtpHost;
-    private final int smtpPort;
-    private final String smtpUser;
-    private final String smtpPassword;
-    private final String fromAddress;
+    private final String apiKey;
+    private final String fromEmail;
+    private final String fromName;
     private final boolean enabled;
+    private final HttpClient httpClient;
 
     public EmailService() {
-        this.smtpHost = envOrDefault("SMTP_HOST", "smtp.gmail.com");
-        this.smtpPort = Integer.parseInt(envOrDefault("SMTP_PORT", "587"));
-        this.smtpUser = System.getenv("SMTP_USER");
-        this.smtpPassword = System.getenv("SMTP_PASSWORD");
-        this.fromAddress = envOrDefault("SMTP_FROM", this.smtpUser);
-        this.enabled = smtpUser != null && !smtpUser.isBlank()
-                    && smtpPassword != null && !smtpPassword.isBlank();
+        this.apiKey = System.getenv("BREVO_API_KEY");
+        this.fromEmail = envOrDefault("SMTP_FROM", envOrDefault("SMTP_USER", "noreply@attendease.app"));
+        this.fromName = "AttendEase";
+        this.enabled = apiKey != null && !apiKey.isBlank();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(15))
+                .build();
 
         if (!enabled) {
-            System.out.println("[EmailService] SMTP not configured (SMTP_USER / SMTP_PASSWORD missing). Email sending disabled.");
+            System.out.println("[EmailService] BREVO_API_KEY not set. Email sending disabled.");
         } else {
-            System.out.println("[EmailService] SMTP configured: " + smtpHost + ":" + smtpPort + " from " + fromAddress);
+            System.out.println("[EmailService] Brevo email API configured. Sender: " + fromEmail);
         }
     }
 
@@ -36,7 +36,7 @@ public class EmailService {
 
     public void sendResetCode(String toEmail, String resetCode, String userName) {
         if (!enabled) {
-            System.out.println("[EmailService] Skipping email (SMTP not configured). Reset code for " + toEmail + ": " + resetCode);
+            System.out.println("[EmailService] Skipping email (not configured). Reset code for " + toEmail + ": " + resetCode);
             return;
         }
 
@@ -44,7 +44,7 @@ public class EmailService {
         String htmlBody = buildResetEmailHtml(resetCode, userName);
 
         try {
-            sendEmail(toEmail, subject, htmlBody);
+            sendViaBrevo(toEmail, subject, htmlBody);
             System.out.println("[EmailService] Reset code sent to " + toEmail);
         } catch (Exception e) {
             System.err.println("[EmailService] Failed to send email to " + toEmail + ": " + e.getClass().getName() + ": " + e.getMessage());
@@ -53,42 +53,32 @@ public class EmailService {
         }
     }
 
-    private void sendEmail(String to, String subject, String htmlBody) throws MessagingException, UnsupportedEncodingException {
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", smtpHost);
-        props.put("mail.smtp.port", String.valueOf(smtpPort));
-        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
-        props.put("mail.smtp.ssl.trust", smtpHost);
-        props.put("mail.smtp.connectiontimeout", "10000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
+    private void sendViaBrevo(String to, String subject, String htmlBody) throws Exception {
+        String jsonBody = "{"
+            + "\"sender\":{\"name\":\"" + escapeJson(fromName) + "\",\"email\":\"" + escapeJson(fromEmail) + "\"},"
+            + "\"to\":[{\"email\":\"" + escapeJson(to) + "\"}],"
+            + "\"subject\":\"" + escapeJson(subject) + "\","
+            + "\"htmlContent\":" + toJsonString(htmlBody)
+            + "}";
 
-        if (smtpPort == 465) {
-            props.put("mail.smtp.socketFactory.port", "465");
-            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
-            props.put("mail.smtp.ssl.enable", "true");
-        } else {
-            props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.smtp.starttls.required", "true");
+        System.out.println("[EmailService] Sending email via Brevo API to " + to);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("api-key", apiKey)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .timeout(Duration.ofSeconds(15))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("[EmailService] Brevo response: " + response.statusCode() + " " + response.body());
+
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new RuntimeException("Email API error (" + response.statusCode() + "): " + response.body());
         }
-
-        System.out.println("[EmailService] Connecting to " + smtpHost + ":" + smtpPort + " to send email to " + to);
-
-        Session session = Session.getInstance(props, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(smtpUser, smtpPassword);
-            }
-        });
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(fromAddress, "AttendEase"));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-        message.setSubject(subject);
-        message.setContent(htmlBody, "text/html; charset=utf-8");
-
-        Transport.send(message);
     }
 
     private String buildResetEmailHtml(String resetCode, String userName) {
@@ -127,6 +117,19 @@ public class EmailService {
                    .replace(">", "&gt;")
                    .replace("\"", "&quot;")
                    .replace("'", "&#39;");
+    }
+
+    private static String escapeJson(String text) {
+        if (text == null) return "";
+        return text.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t");
+    }
+
+    private static String toJsonString(String text) {
+        return "\"" + escapeJson(text) + "\"";
     }
 
     private static String envOrDefault(String key, String defaultValue) {

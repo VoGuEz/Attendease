@@ -2,37 +2,41 @@ package com.attendease.services;
 
 import com.attendease.models.User;
 import com.attendease.repositories.UserRepository;
+import com.attendease.utils.JwtUtil;
 import com.attendease.utils.PasswordUtil;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthService {
     private final UserRepository userRepository;
-    private final EmailService emailService;
-    private final JwtTokenProvider tokenProvider;
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
+    private final Random random = new Random();
 
-    public AuthService(UserRepository userRepository, EmailService emailService, JwtTokenProvider tokenProvider) {
+    public AuthService(UserRepository userRepository, Object ignored1, Object ignored2) {
         this.userRepository = userRepository;
-        this.emailService = emailService;
-        this.tokenProvider = tokenProvider;
     }
 
     public Map<String, Object> register(String email, String password, String fullName, String role) {
+        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
+        if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
+        if (fullName == null || fullName.isBlank()) throw new IllegalArgumentException("Full name is required");
+        if (role == null || role.isBlank()) role = "student";
+
         if (userRepository.findByEmail(email) != null) {
             throw new IllegalArgumentException("Email already registered");
         }
 
         String hashed = PasswordUtil.hashPassword(password);
-        User user = new User(email, hashed, fullName, role != null ? role : "student");
+        User user = new User(email, hashed, fullName, role);
         userRepository.save(user);
-        
+
         User saved = userRepository.findByEmail(email);
         if (saved == null) throw new RuntimeException("Failed to retrieve user after saving");
 
-        String token = tokenProvider.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
+        String token = JwtUtil.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
@@ -41,13 +45,16 @@ public class AuthService {
     }
 
     public Map<String, Object> login(String email, String password) {
+        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
+        if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is required");
+
         User user = userRepository.findByEmail(email);
         if (user == null || !PasswordUtil.checkPassword(password, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new IllegalArgumentException("Invalid email or password");
         }
 
-        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
-        
+        String token = JwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
+
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
         result.put("user", userToMap(user));
@@ -55,23 +62,32 @@ public class AuthService {
     }
 
     public Map<String, Object> requestPasswordReset(String email) {
+        if (email == null || email.isBlank()) throw new IllegalArgumentException("Email is required");
+
         User user = userRepository.findByEmail(email);
-        // We always return the same message for security
         if (user != null) {
-            String resetToken = UUID.randomUUID().toString().substring(0, 8);
-            resetTokens.put(resetToken, email);
-            emailService.sendResetCode(email, resetToken);
+            // Generate 6-digit code
+            String resetCode = String.format("%06d", random.nextInt(1000000));
+            resetTokens.put(resetCode, email);
+            System.out.println("[AuthService] Password reset code for " + email + ": " + resetCode);
         }
+
         return Map.of("message", "If that email exists, a reset code has been sent.");
     }
 
-    public Map<String, Object> resetPassword(String token, String newPassword) {
-        String email = resetTokens.get(token);
-        if (email == null) throw new IllegalArgumentException("Invalid or expired token");
-        
+    public Map<String, Object> resetPassword(String resetCode, String newPassword) {
+        if (resetCode == null || resetCode.isBlank()) throw new IllegalArgumentException("Reset code is required");
+        if (newPassword == null || newPassword.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
+
+        String email = resetTokens.get(resetCode);
+        if (email == null) throw new IllegalArgumentException("Invalid or expired reset code");
+
         User user = userRepository.findByEmail(email);
+        if (user == null) throw new IllegalArgumentException("User not found");
+
         userRepository.updatePassword(user.getId(), PasswordUtil.hashPassword(newPassword));
-        resetTokens.remove(token);
+        resetTokens.remove(resetCode);
+
         return Map.of("message", "Password reset successfully");
     }
 

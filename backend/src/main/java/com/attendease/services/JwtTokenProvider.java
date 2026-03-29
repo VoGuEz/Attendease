@@ -14,13 +14,16 @@ public class JwtTokenProvider {
         this.secret = System.getenv().getOrDefault("JWT_SECRET", "placeholder_secret_key_32_chars_minimum");
     }
 
-    public String generateToken(String email) {
+    // Updated signature to include ID and Role
+    public String generateToken(int userId, String email, String role) {
         SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
         return Jwts.builder()
                 .subject(email)
+                .claim("userId", userId) // Essential for database queries
+                .claim("role", role)     // Essential for Dashboard routing
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)

@@ -20,18 +20,22 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
     }
 
-    // signature: 4 strings
     public Map<String, Object> register(String email, String password, String fullName, String role) {
+        if (userRepository.findByEmail(email) != null) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
         String hashed = PasswordUtil.hashPassword(password);
         User user = new User(email, hashed, fullName, role != null ? role : "student");
         userRepository.save(user);
         
         User saved = userRepository.findByEmail(email);
-        String token = tokenProvider.generateToken(saved.getEmail());
+        // PASSING ID AND ROLE TO TOKEN
+        String token = tokenProvider.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("user", Map.of("email", saved.getEmail(), "fullName", saved.getFullName()));
+        result.put("user", userToMap(saved));
         return result;
     }
 
@@ -40,25 +44,42 @@ public class AuthService {
         if (user == null || !PasswordUtil.checkPassword(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid credentials");
         }
-        String token = tokenProvider.generateToken(user.getEmail());
-        return Map.of("token", token, "user", Map.of("email", user.getEmail()));
+
+        // PASSING ID AND ROLE TO TOKEN
+        String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("token", token);
+        result.put("user", userToMap(user));
+        return result;
     }
 
     public Map<String, Object> requestPasswordReset(String email) {
-        String resetToken = UUID.randomUUID().toString().substring(0, 8);
-        resetTokens.put(resetToken, email);
-        emailService.sendResetCode(email, resetToken);
-        return Map.of("message", "Reset code sent");
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            String resetToken = UUID.randomUUID().toString().substring(0, 8);
+            resetTokens.put(resetToken, email);
+            emailService.sendResetCode(email, resetToken);
+        }
+        return Map.of("message", "If that email exists, a reset code has been sent.");
     }
 
-    // signature: 2 strings
     public Map<String, Object> resetPassword(String token, String newPassword) {
         String email = resetTokens.get(token);
-        if (email == null) throw new IllegalArgumentException("Invalid token");
+        if (email == null) throw new IllegalArgumentException("Invalid or expired token");
         
         User user = userRepository.findByEmail(email);
         userRepository.updatePassword(user.getId(), PasswordUtil.hashPassword(newPassword));
         resetTokens.remove(token);
-        return Map.of("message", "Success");
+        return Map.of("message", "Password reset successfully");
+    }
+
+    private Map<String, Object> userToMap(User user) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", user.getId());
+        m.put("email", user.getEmail());
+        m.put("fullName", user.getFullName());
+        m.put("role", user.getRole());
+        return m;
     }
 }

@@ -10,20 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password').value;
             const btn = e.target.querySelector('button[type="submit"]');
 
-            // UI feedback
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> Signing in...';
-            authMsg.textContent = '';
+            btn.innerHTML = 'Signing in...';
 
             try {
-                // Send request to Railway backend
                 const data = await apiRequest('/auth/login', 'POST', { email, password });
 
                 if (data && data.token) {
-                    // CRITICAL: This is what fills your empty LocalStorage table
+                    // This saves the data so the dashboard button knows you are a Lecturer
                     setAuth(data.token, data.user);
                     
-                    // Redirect based on role
                     const role = data.user.role.toUpperCase();
                     if (role === 'LECTURER') {
                         window.location.href = 'lecturer.html';
@@ -32,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (err) {
-                authMsg.textContent = err.message || 'Login failed. Please try again.';
+                authMsg.textContent = err.message || 'Login failed.';
                 authMsg.className = 'msg error';
                 btn.disabled = false;
                 btn.innerHTML = 'Sign In';

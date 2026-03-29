@@ -7,12 +7,16 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.List;
+import java.util.Random;
 
 public class SessionService {
     private final SessionRepository sessionRepository;
+    private final EmailService emailService;
+    private final Random random = new Random();
 
-    public SessionService(SessionRepository sessionRepository) {
+    public SessionService(SessionRepository sessionRepository, EmailService emailService) {
         this.sessionRepository = sessionRepository;
+        this.emailService = emailService;
     }
 
     public Session createSession(int courseId, String date, String startTime, String endTime) throws SQLException {
@@ -33,10 +37,31 @@ public class SessionService {
         return sessionRepository.findByCourseId(courseId);
     }
 
+    /**
+     * Updates session status. When going active, generates a 6-digit code,
+     * saves it, and emails it to all enrolled students.
+     */
     public void updateStatus(int sessionId, String status) throws SQLException {
         if (!List.of("upcoming", "active", "completed").contains(status))
             throw new IllegalArgumentException("Invalid status");
+
         sessionRepository.updateStatus(sessionId, status);
+
+        if ("active".equals(status)) {
+            String code = String.format("%06d", random.nextInt(1000000));
+            sessionRepository.saveCode(sessionId, code);
+
+            Session session = sessionRepository.findById(sessionId).orElse(null);
+            String courseName = session != null && session.getCourseName() != null
+                ? session.getCourseName() : "your class";
+
+            List<String> emails = sessionRepository.findEnrolledStudentEmails(sessionId);
+            for (String email : emails) {
+                emailService.sendSessionCode(email, courseName, code);
+            }
+
+            System.out.println("[SessionService] Session " + sessionId + " activated. Code: " + code + " — emailed " + emails.size() + " students");
+        }
     }
 
     public List<Session> getActiveSessions() throws SQLException {
@@ -49,6 +74,13 @@ public class SessionService {
 
     public Session getSessionById(int id) throws SQLException {
         return sessionRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Session not found"));
+    }
+
+    /**
+     * Returns the session code for a session (lecturer view only).
+     */
+    public String getSessionCode(int sessionId) throws SQLException {
+        return sessionRepository.getCode(sessionId);
     }
 
     public Session updateSession(int sessionId, String date, String startTime, String endTime) throws SQLException {

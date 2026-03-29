@@ -21,6 +21,11 @@ public class AttendanceService {
         this.sessionRepository = sessionRepository;
     }
 
+    public boolean validateSessionCode(int sessionId, String code) throws SQLException {
+        if (code == null || code.isBlank()) return false;
+        return sessionRepository.validateCode(sessionId, code);
+    }
+
     public Map<String, Object> joinSession(int studentId, int sessionId, String fullName,
             String indexNumber, String level, Double latitude, Double longitude) throws SQLException {
         if (attendanceRepository.existsBySessionAndStudent(sessionId, studentId))
@@ -55,10 +60,6 @@ public class AttendanceService {
         return response;
     }
 
-    /**
-     * Returns attendance for a session only if the requesting lecturer owns it.
-     * Throws SecurityException if the session belongs to a different lecturer.
-     */
     public List<Attendance> getAttendanceForSession(int sessionId, int lecturerId) throws SQLException {
         if (!sessionRepository.isOwnedByLecturer(sessionId, lecturerId)) {
             throw new SecurityException("Access denied: this session does not belong to you");

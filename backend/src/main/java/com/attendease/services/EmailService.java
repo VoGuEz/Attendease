@@ -18,22 +18,43 @@ public class EmailService {
     }
 
     public void sendResetCode(String targetEmail, String token) {
+        String subject = "AttendEase - Password Reset Code";
+        String body = "Your password reset code is: " + token + "\n\nThis code is valid for your current session only.";
+        sendEmail(targetEmail, subject, body);
+    }
+
+    /**
+     * Sends the session join code to a student when their lecturer starts a session.
+     */
+    public void sendSessionCode(String targetEmail, String courseName, String code) {
+        String subject = "AttendEase - Session Code for " + courseName;
+        String body = "Your lecturer has started a session for " + courseName + ".\n\n"
+                    + "Your session code is: " + code + "\n\n"
+                    + "Enter this code in the AttendEase app to join the session and mark your attendance.\n"
+                    + "This code is only valid while the session is active.";
+        sendEmail(targetEmail, subject, body);
+    }
+
+    private void sendEmail(String targetEmail, String subject, String textContent) {
         new Thread(() -> {
             try {
-                // Non-deprecated URL creation
                 URL url = URI.create("https://api.brevo.com/v3/smtp/email").toURL();
-                
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("api-key", apiKey);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
+                String safeContent = textContent
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n");
+
                 String jsonBody = "{"
                     + "\"sender\":{\"email\":\"" + fromEmail + "\",\"name\":\"AttendEase\"},"
                     + "\"to\":[{\"email\":\"" + targetEmail + "\"}],"
-                    + "\"subject\":\"AttendEase - Password Reset Code\","
-                    + "\"textContent\":\"Your password reset code is: " + token + "\""
+                    + "\"subject\":\"" + subject + "\","
+                    + "\"textContent\":\"" + safeContent + "\""
                     + "}";
 
                 try (OutputStream os = conn.getOutputStream()) {
@@ -43,9 +64,8 @@ public class EmailService {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode >= 200 && responseCode < 300) {
-                    System.out.println("[EmailService] API Success! Reset code sent to: " + targetEmail);
+                    System.out.println("[EmailService] Email sent successfully to: " + targetEmail);
                 } else {
-                    // Refined error handling with nested try-with-resources to fix Scanner warnings
                     try (InputStream es = conn.getErrorStream()) {
                         if (es != null) {
                             try (Scanner s = new Scanner(es, StandardCharsets.UTF_8).useDelimiter("\\A")) {

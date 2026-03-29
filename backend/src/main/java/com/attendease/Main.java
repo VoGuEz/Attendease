@@ -39,7 +39,6 @@ public class Main {
             System.exit(1);
         }
 
-        // HikariCP connection pool
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?useSSL=true&serverTimezone=UTC");
         config.setUsername(dbUser);
@@ -64,11 +63,11 @@ public class Main {
         SessionRepository    sessionRepository    = new SessionRepository(dataSource);
         AttendanceRepository attendanceRepository = new AttendanceRepository(dataSource);
 
-        // Services
+        // EmailService shared across AuthService and SessionService
         EmailService      emailService      = new EmailService();
         AuthService       authService       = new AuthService(userRepository, emailService);
         CourseService     courseService     = new CourseService(courseRepository);
-        SessionService    sessionService    = new SessionService(sessionRepository);
+        SessionService    sessionService    = new SessionService(sessionRepository, emailService);
         AttendanceService attendanceService = new AttendanceService(attendanceRepository, sessionRepository);
 
         // Handlers

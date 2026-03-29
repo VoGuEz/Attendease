@@ -13,6 +13,7 @@ public class Session {
     private String status;
     private Timestamp createdAt;
     private String courseName;
+    private String sessionCode;
 
     public Session() {}
 
@@ -47,4 +48,7 @@ public class Session {
 
     public String getCourseName() { return courseName; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getSessionCode() { return sessionCode; }
+    public void setSessionCode(String sessionCode) { this.sessionCode = sessionCode; }
 }

@@ -68,6 +68,67 @@ public class SessionRepository {
         }
     }
 
+    /**
+     * Saves a 6-digit session code when a session goes active.
+     */
+    public void saveCode(int sessionId, String code) throws SQLException {
+        String sql = "UPDATE sessions SET session_code = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, code);
+            stmt.setInt(2, sessionId);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Returns true if the code matches an active session.
+     */
+    public boolean validateCode(int sessionId, String code) throws SQLException {
+        String sql = "SELECT 1 FROM sessions WHERE id = ? AND session_code = ? AND status = 'active'";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            stmt.setString(2, code);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
+    /**
+     * Returns the session code (for displaying to the lecturer).
+     */
+    public String getCode(int sessionId) throws SQLException {
+        String sql = "SELECT session_code FROM sessions WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getString("session_code");
+        }
+        return null;
+    }
+
+    /**
+     * Returns emails of all students enrolled in the course of a given session.
+     */
+    public List<String> findEnrolledStudentEmails(int sessionId) throws SQLException {
+        String sql = """
+            SELECT u.email FROM users u
+            JOIN student_courses sc ON u.id = sc.student_id
+            JOIN sessions s ON sc.course_id = s.course_id
+            WHERE s.id = ?
+            """;
+        List<String> emails = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) emails.add(rs.getString("email"));
+        }
+        return emails;
+    }
+
     public List<Session> findActiveSessions() throws SQLException {
         String sql = "SELECT s.*, c.course_name FROM sessions s JOIN courses c ON s.course_id = c.id WHERE s.status = 'active' ORDER BY s.session_date DESC";
         List<Session> sessions = new ArrayList<>();
@@ -120,7 +181,6 @@ public class SessionRepository {
 
     /**
      * Checks whether a session belongs to a specific lecturer.
-     * The ownership chain is: sessions → courses → courses.lecturer_id
      */
     public boolean isOwnedByLecturer(int sessionId, int lecturerId) throws SQLException {
         String sql = """
@@ -148,6 +208,7 @@ public class SessionRepository {
         session.setStatus(rs.getString("status"));
         session.setCreatedAt(rs.getTimestamp("created_at"));
         try { session.setCourseName(rs.getString("course_name")); } catch (SQLException ignored) {}
+        try { session.setSessionCode(rs.getString("session_code")); } catch (SQLException ignored) {}
         return session;
     }
 }

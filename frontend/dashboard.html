@@ -7,18 +7,19 @@
   <link rel="stylesheet" href="css/styles.css?v=5" />
   <link rel="icon" type="image/png" href="images/logo.png" />
   <style>
-    /* Ensure the welcome screen is centered and looks like the screenshot */
     body {
       margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      /* These now correctly pull from your themes.js logic */
       background-color: var(--bg, #121212);
+      color: var(--text, #ffffff);
     }
 
     .welcome-card {
-      background: var(--card-bg, #1e1e1e);
+      background: var(--bg-secondary, #1e1e1e);
       padding: 40px;
       border-radius: 24px;
       text-align: center;
@@ -47,11 +48,26 @@
       padding: 14px;
       font-weight: 600;
       font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.2s;
     }
 
-    /* Role-specific button colors if desired */
+    #go-dashboard-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Use theme variables for button colors if possible, or keep these overrides */
     .btn-student { background-color: #008c9e !important; }
     .btn-lecturer { background-color: #2938b8 !important; }
+
+    .theme-switcher-corner {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+    }
   </style>
 </head>
 <body>
@@ -61,7 +77,7 @@
   <div class="dashboard-welcome">
     <div class="welcome-card">
       <img src="images/logo.png" alt="AttendEase Logo" class="welcome-logo-img" />
-      <h1 style="margin-bottom: 8px;">AttendEase</h1>
+      <h1 style="margin-bottom: 8px; color: var(--text);">AttendEase</h1>
       <p id="welcome-msg" style="color: var(--text-secondary); margin-bottom: 20px;">Welcome back!</p>
 
       <div style="margin-bottom: 24px;">
@@ -78,19 +94,27 @@
   <script src="js/api.js?v=2"></script>
   <script src="js/themes.js?v=3"></script>
   <script>
-    // Ensure theme switcher is rendered
+    // --- 1. THEME FIX ---
+    // Immediately apply the saved theme before doing anything else
+    if (typeof initTheme === 'function') {
+      initTheme(); 
+    } else if (typeof applyTheme === 'function') {
+      // Fallback if your function is named applyTheme
+      const savedTheme = localStorage.getItem('theme-id') || 'dark';
+      applyTheme(savedTheme);
+    }
+
+    // Render the switcher UI
     if (typeof renderThemeSwitcher === 'function') {
       renderThemeSwitcher('theme-switcher-container');
     }
 
-    // requireAuth() comes from your api.js
+    // --- 2. AUTH & CONTENT ---
     const user = requireAuth(); 
     
     if (user) {
-      // Update Name
       document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
 
-      // Update Badge and Button
       const badge = document.getElementById('role-badge');
       const btn = document.getElementById('go-dashboard-btn');
       
@@ -98,19 +122,17 @@
 
       if (user.role === 'student') {
         badge.textContent = '🎓 Student';
-        badge.className = 'badge badge-active'; // Using your CSS classes
+        badge.className = 'badge badge-active'; 
         btn.textContent = '🎓 Student Dashboard →';
         btn.classList.add('btn-student');
       } else {
         badge.textContent = '👨‍🏫 Lecturer';
-        badge.className = 'badge badge-upcoming'; // Using your CSS classes
+        badge.className = 'badge badge-upcoming'; 
         btn.textContent = '👨‍🏫 Lecturer Dashboard →';
         btn.classList.add('btn-lecturer');
       }
 
-      // Handle Redirection
       btn.addEventListener('click', () => {
-        // Redirects to specific files based on role
         window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
       });
     }

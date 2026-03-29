@@ -1,210 +1,239 @@
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Dashboard – AttendEase</title>
-    <link rel="stylesheet" href="css/styles.css?v=5" />
-    <link rel="icon" type="image/png" href="images/logo.png" />
-    <style>
-      .location-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        font-size: 13px;
-        color: var(--text-secondary);
-      }
-    </style>
-  </head>
-  <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard – AttendEase</title>
+  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <style>
+    .location-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <button class="hamburger-menu" id="hamburger-btn">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <a href="dashboard.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
-      <div class="navbar-right">
-        <div class="user-badge">
-          <span class="avatar-badge" id="user-avatar"></span>
-          <span class="user-badge-name" id="user-name">...</span>
-        </div>
-        <div id="theme-switcher-container"></div>
-        <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <button class="hamburger-menu" id="hamburger-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <a href="dashboard.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
+    <div class="navbar-right">
+      <div class="user-badge">
+        <span class="avatar-badge" id="user-avatar"></span>
+        <span class="user-badge-name" id="user-name">...</span>
       </div>
-    </nav>
-
-    <div class="dashboard-layout">
-      <!-- Mobile overlay -->
-      <div class="mobile-overlay" id="mobile-overlay"></div>
-      
-      <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-user-info" id="sidebar-user-info">
-          <span class="sidebar-user-avatar" id="sidebar-avatar"></span>
-          <span class="sidebar-user-name" id="sidebar-user-name">...</span>
-        </div>
-        <ul class="sidebar-nav">
-          <li class="active">
-            <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>
-          </li>
-          <li>
-            <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions <span class="notification-dot" id="notif-dot-active" style="display:none"></span></a>
-          </li>
-          <li>
-            <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
-          </li>
-          <li>
-            <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>
-          </li>
-        </ul>
-      </aside>
-
-      <!-- Main content -->
-      <main class="main-content">
-        <div class="breadcrumb" id="breadcrumb"></div>
-
-        <!-- OVERVIEW SECTION -->
-        <div id="section-overview" class="section active">
-          <div class="section-header">
-            <h2>Overview</h2>
-          </div>
-
-          <!-- Stats grid -->
-          <div class="stats-grid" id="overview-stats">
-            <div class="stat-card">
-              <div class="stat-label">Enrolled Courses</div>
-              <div class="stat-value" id="stat-enrolled">–</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Sessions Attended</div>
-              <div class="stat-value" id="stat-attended">–</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Total Sessions</div>
-              <div class="stat-value" id="total-sessions-stat">–</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Overall Attendance</div>
-              <div class="stat-value" id="stat-percentage">–</div>
-            </div>
-          </div>
-
-          <!-- Progress bar -->
-          <div class="card mb-32">
-            <div class="progress-container">
-              <div class="progress-label">
-                <span>Overall Progress</span>
-                <span id="overall-progress-label">0%</span>
-              </div>
-              <div class="progress-bar-wrapper">
-                <div class="progress-bar-fill" id="overall-progress-fill" style="width: 0%"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Active Sessions Preview -->
-          <div class="section-header">
-            <h3>Active Sessions</h3>
-            <a href="#" class="btn btn-sm btn-outline" data-section="active">View all</a>
-          </div>
-          <div class="items-grid" id="active-sessions" style="margin-bottom: 32px; display: none;">
-            <div class="loading-overlay"><span class="spinner"></span></div>
-          </div>
-
-          <!-- All Sessions from Enrolled Courses -->
-          <div class="section-header">
-            <h3>📡 Sessions to Join</h3>
-          </div>
-          <div class="items-grid" id="all-available-sessions" style="margin-bottom: 32px">
-            <div class="loading-overlay"><span class="spinner"></span></div>
-          </div>
-        </div>
-
-        <!-- COURSES SECTION -->
-        <div id="section-courses" class="section">
-          <div class="section-header">
-            <h2>My Courses</h2>
-          </div>
-
-          <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">Enrolled</h3>
-          <input type="text" id="search-enrolled" placeholder="Search enrolled courses..." style="margin-bottom:12px; max-width:360px;" />
-          <div class="items-grid mb-32" id="enrolled-courses">
-            <div class="loading-overlay"><span class="spinner"></span></div>
-          </div>
-
-          <!-- Session detail panel -->
-          <div id="sessions-panel" style="display:none; margin-bottom:32px">
-            <div id="course-sessions-detail"></div>
-          </div>
-
-          <hr class="divider" />
-          <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">Available to Enroll</h3>
-          <input type="text" id="search-available" placeholder="Search available courses..." style="margin-bottom:12px; max-width:360px;" />
-          <div class="items-grid" id="available-courses">
-            <div class="loading-overlay"><span class="spinner"></span></div>
-          </div>
-        </div>
-
-        <!-- ACTIVE SESSIONS SECTION -->
-        <div id="section-active" class="section">
-          <div class="section-header">
-            <h2>Active Sessions</h2>
-            <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
-          </div>
-          <div class="items-grid" id="active-sessions-full">
-            <div class="loading-overlay"><span class="spinner"></span></div>
-          </div>
-        </div>
-
-        <!-- SETTINGS SECTION -->
-        <div id="section-settings" class="section">
-          <div class="section-header">
-            <h2>Settings</h2>
-          </div>
-          <div class="card" style="max-width: 480px;">
-            <h3 style="margin-bottom: 16px;">Theme</h3>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose your preferred color theme.</p>
-            <div id="settings-theme-switcher"></div>
-          </div>
-          <div class="card" style="max-width: 480px; margin-top: 16px;">
-            <h3 style="margin-bottom: 16px;">Wallpaper</h3>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose a floating background wallpaper.</p>
-            <div id="settings-wallpaper-picker" class="wallpaper-picker"></div>
-          </div>
-          <div class="card" style="max-width: 480px; margin-top: 16px;">
-            <h3 style="margin-bottom: 16px;">Account</h3>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
-            <div style="margin-bottom: 16px;">
-              <label for="settings-name-input" style="display:block; font-size:14px; margin-bottom:6px; color:var(--text-secondary);">Display Name</label>
-              <div style="display:flex; gap:8px;">
-                <input type="text" id="settings-name-input" placeholder="Your full name"
-                  style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text); font-size:14px;" />
-                <button class="btn btn-sm" onclick="saveName()">Save</button>
-              </div>
-              <p id="settings-name-msg" style="font-size:13px; margin-top:6px; display:none;"></p>
-            </div>
-            <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
-          </div>
-        </div>
-
-      </main>
+      <div id="theme-switcher-container"></div>
+      <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
     </div>
+  </nav>
 
-    <div class="modal-overlay" id="modal-join-session">
-      <div class="modal" style="max-width: 520px; width: calc(100% - 32px);">
-        <div class="modal-header">
-          <h3>Join Session</h3>
-          <button class="modal-close" type="button" onclick="closeJoinModal()">&times;</button>
+  <div class="dashboard-layout">
+    <!-- Mobile overlay -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-user-info" id="sidebar-user-info">
+        <span class="sidebar-user-avatar" id="sidebar-avatar"></span>
+        <span class="sidebar-user-name" id="sidebar-user-name">...</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li class="active">
+          <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>
+        </li>
+        <li>
+          <a href="#" data-section="active"><span class="sidebar-icon">📡</span> Active Sessions <span class="notification-dot" id="notif-dot-active" style="display:none"></span></a>
+        </li>
+        <li>
+          <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
+        </li>
+        <li>
+          <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+
+      <!-- OVERVIEW SECTION -->
+      <div id="section-overview" class="section active">
+        <div class="section-header">
+          <h2>Overview</h2>
         </div>
+
+        <!-- Stats grid -->
+        <div class="stats-grid" id="overview-stats">
+          <div class="stat-card">
+            <div class="stat-label">Enrolled Courses</div>
+            <div class="stat-value" id="stat-enrolled">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sessions Attended</div>
+            <div class="stat-value" id="stat-attended">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-value" id="total-sessions-stat">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Overall Attendance</div>
+            <div class="stat-value" id="stat-percentage">–</div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="card mb-32">
+          <div class="progress-container">
+            <div class="progress-label">
+              <span>Overall Progress</span>
+              <span id="overall-progress-label">0%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" id="overall-progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Sessions Preview -->
+        <div class="section-header">
+          <h3>Active Sessions</h3>
+          <a href="#" class="btn btn-sm btn-outline" data-section="active">View all</a>
+        </div>
+        <div class="items-grid" id="active-sessions" style="margin-bottom: 32px; display: none;">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+
+        <!-- All Sessions from Enrolled Courses -->
+        <div class="section-header">
+          <h3>📡 Sessions to Join</h3>
+        </div>
+        <div class="items-grid" id="all-available-sessions" style="margin-bottom: 32px">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- COURSES SECTION -->
+      <div id="section-courses" class="section">
+        <div class="section-header">
+          <h2>My Courses</h2>
+        </div>
+
+        <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">Enrolled</h3>
+        <input type="text" id="search-enrolled" placeholder="Search enrolled courses..." style="margin-bottom:12px; max-width:360px;" />
+        <div class="items-grid mb-32" id="enrolled-courses">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+
+        <!-- Session detail panel -->
+        <div id="sessions-panel" style="display:none; margin-bottom:32px">
+          <div id="course-sessions-detail"></div>
+        </div>
+
+        <hr class="divider" />
+        <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">Available to Enroll</h3>
+        <input type="text" id="search-available" placeholder="Search available courses..." style="margin-bottom:12px; max-width:360px;" />
+        <div class="items-grid" id="available-courses">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- ACTIVE SESSIONS SECTION -->
+      <div id="section-active" class="section">
+        <div class="section-header">
+          <h2>Active Sessions</h2>
+          <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
+        </div>
+        <div class="items-grid" id="active-sessions-full">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS SECTION -->
+      <div id="section-settings" class="section">
+        <div class="section-header">
+          <h2>Settings</h2>
+        </div>
+        <div class="card" style="max-width: 480px;">
+          <h3 style="margin-bottom: 16px;">Theme</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose your preferred color theme.</p>
+          <div id="settings-theme-switcher"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Wallpaper</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose a floating background wallpaper.</p>
+          <div id="settings-wallpaper-picker" class="wallpaper-picker"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Account</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
+          <div style="margin-bottom: 16px;">
+            <label for="settings-name-input" style="display:block; font-size:14px; margin-bottom:6px; color:var(--text-secondary);">Display Name</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="settings-name-input" placeholder="Your full name"
+                style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text); font-size:14px;" />
+              <button class="btn btn-sm" onclick="saveName()">Save</button>
+            </div>
+            <p id="settings-name-msg" style="font-size:13px; margin-top:6px; display:none;"></p>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ✅ TWO-STEP JOIN MODAL -->
+  <div class="modal-overlay" id="modal-join-session">
+    <div class="modal" style="max-width: 520px; width: calc(100% - 32px);">
+      <div class="modal-header">
+        <h3>Join Session</h3>
+        <button class="modal-close" type="button" onclick="closeJoinModal()">&times;</button>
+      </div>
+
+      <!-- Shared hidden fields (outside both steps so reset() inside the form doesn't wipe them) -->
+      <input type="hidden" id="join-session-id" />
+      <input type="hidden" id="join-session-code-confirmed" />
+
+      <!-- STEP 1: Code Entry -->
+      <div id="join-code-step">
+        <p style="font-size:14px; color:var(--text-secondary); margin-bottom:16px;">
+          Enter the 6-digit session code sent to your email by your lecturer.
+        </p>
+        <div style="display:grid; gap:14px;">
+          <div>
+            <label for="join-session-code" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Session Code</label>
+            <input type="text" id="join-session-code" maxlength="6" pattern="\d{6}" placeholder="e.g. 284719"
+              autocomplete="one-time-code"
+              style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+                     background:var(--bg-secondary); color:var(--text); font-size:20px;
+                     letter-spacing:6px; text-align:center;" />
+          </div>
+          <p id="join-code-msg" style="display:none; font-size:13px; margin:0;"></p>
+        </div>
+        <div class="modal-footer" style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn btn-sm btn-outline" type="button" onclick="closeJoinModal()">Cancel</button>
+          <button class="btn btn-sm btn-success" type="button" id="validate-code-btn" onclick="validateAndProceed()">Verify Code</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Attendance Details (shown after code verified) -->
+      <div id="join-details-step" style="display:none;">
         <form id="join-session-form">
-          <input type="hidden" id="join-session-id" />
           <div style="display:grid; gap:14px;">
             <div>
               <label for="join-full-name" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Full Name</label>
@@ -236,81 +265,79 @@
           </div>
         </form>
       </div>
-    </div>
 
-    <script src="js/api.js?v=2"></script>
-    <script src="js/themes.js?v=3"></script>
-    <script src="js/student.js?v=3"></script>
-    <script>
-      // Render settings theme switcher too
-      document.addEventListener('DOMContentLoaded', () => {
+    </div>
+  </div>
+
+  <script src="js/api.js?v=2"></script>
+  <script src="js/themes.js?v=3"></script>
+  <script src="js/student.js?v=4"></script><!-- ✅ bumped to v=4 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getUser();
+      if (user) {
+        const emailEl = document.getElementById('settings-email');
+        if (emailEl) emailEl.textContent = user.email;
+        const nameInput = document.getElementById('settings-name-input');
+        if (nameInput) nameInput.value = user.fullName || '';
+      }
+      const settingsContainer = document.getElementById('settings-theme-switcher');
+      if (settingsContainer) {
+        settingsContainer.innerHTML = `
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            ${THEMES.map(t => `
+              <button onclick="applyTheme('${t.id}')" title="${t.label}"
+                style="width:40px;height:40px;border-radius:50%;border:3px solid transparent;cursor:pointer;
+                      background:linear-gradient(135deg,${t.bg} 50%,${t.color} 50%);
+                      transition:transform 0.2s,border-color 0.2s;"
+                onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      renderWallpaperPicker('settings-wallpaper-picker');
+
+      const activeFull = document.getElementById('active-sessions-full');
+      if (activeFull) {
+        const observer = new MutationObserver(() => {
+          const src = document.getElementById('active-sessions');
+          if (src) activeFull.innerHTML = src.innerHTML;
+        });
+        const src = document.getElementById('active-sessions');
+        if (src) observer.observe(src, { childList: true, subtree: true });
+      }
+    });
+
+    async function saveName() {
+      const input = document.getElementById('settings-name-input');
+      const msg = document.getElementById('settings-name-msg');
+      const fullName = input ? input.value.trim() : '';
+      if (!fullName) {
+        msg.textContent = 'Name cannot be empty.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
+        return;
+      }
+      try {
+        const updated = await apiRequest('/auth/update-name', 'PUT', { fullName });
         const user = getUser();
         if (user) {
-          const emailEl = document.getElementById('settings-email');
-          if (emailEl) emailEl.textContent = user.email;
-          const nameInput = document.getElementById('settings-name-input');
-          if (nameInput) nameInput.value = user.fullName || '';
+          user.fullName = updated.fullName;
+          localStorage.setItem('user', JSON.stringify(user));
         }
-        // Inline theme picker for settings
-        const settingsContainer = document.getElementById('settings-theme-switcher');
-        if (settingsContainer) {
-          settingsContainer.innerHTML = `
-            <div style="display:flex; gap:12px; flex-wrap:wrap;">
-              ${THEMES.map(t => `
-                <button onclick="applyTheme('${t.id}')" title="${t.label}"
-                  style="width:40px;height:40px;border-radius:50%;border:3px solid transparent;cursor:pointer;
-                        background:linear-gradient(135deg,${t.bg} 50%,${t.color} 50%);
-                        transition:transform 0.2s,border-color 0.2s;"
-                  onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
-                </button>
-              `).join('')}
-            </div>
-          `;
-        }
-
-        // Wallpaper picker for settings
-        renderWallpaperPicker('settings-wallpaper-picker');
-
-        // Mirror active sessions to active section
-        const activeFull = document.getElementById('active-sessions-full');
-        if (activeFull) {
-          const observer = new MutationObserver(() => {
-            const src = document.getElementById('active-sessions');
-            if (src) activeFull.innerHTML = src.innerHTML;
-          });
-          const src = document.getElementById('active-sessions');
-          if (src) observer.observe(src, { childList: true, subtree: true });
-        }
-      });
-
-      async function saveName() {
-        const input = document.getElementById('settings-name-input');
-        const msg = document.getElementById('settings-name-msg');
-        const fullName = input ? input.value.trim() : '';
-        if (!fullName) {
-          msg.textContent = 'Name cannot be empty.';
-          msg.style.color = 'var(--danger, #e74c3c)';
-          msg.style.display = 'block';
-          return;
-        }
-        try {
-          const updated = await apiRequest('/auth/update-name', 'PUT', { fullName });
-          const user = getUser();
-          if (user) {
-            user.fullName = updated.fullName;
-            localStorage.setItem('user', JSON.stringify(user));
-          }
-          const nameEl = document.getElementById('user-name');
-          if (nameEl) nameEl.textContent = updated.fullName;
-          msg.textContent = 'Name updated successfully!';
-          msg.style.color = 'var(--success, #27ae60)';
-          msg.style.display = 'block';
-        } catch (e) {
-          msg.textContent = e.message || 'Failed to update name.';
-          msg.style.color = 'var(--danger, #e74c3c)';
-          msg.style.display = 'block';
-        }
+        const nameEl = document.getElementById('user-name');
+        if (nameEl) nameEl.textContent = updated.fullName;
+        msg.textContent = 'Name updated successfully!';
+        msg.style.color = 'var(--success, #27ae60)';
+        msg.style.display = 'block';
+      } catch (e) {
+        msg.textContent = e.message || 'Failed to update name.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
       }
-    </script>
-  </body>
-  </html>
+    }
+  </script>
+</body>
+</html>

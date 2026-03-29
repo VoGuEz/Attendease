@@ -16,6 +16,7 @@ function getUser() {
 }
 
 function setAuth(token, user) {
+  console.log("Saving Auth to LocalStorage...", { token: !!token, user });
   localStorage.setItem('token', token);
   localStorage.setItem('user', JSON.stringify(user));
 }
@@ -37,7 +38,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
     
     if (response.status === 401) {
-      console.warn("Unauthorized request. Redirecting to login...");
+      console.warn("Unauthorized (401). Clearing session...");
       clearAuth();
       window.location.href = 'index.html';
       return;
@@ -46,7 +47,9 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     const data = await response.json();
 
     if (!response.ok) {
+      // Fix for the "Purple Bar" loop / Broken JWTs
       if (data.message && (data.message.includes('JWT') || data.message.includes('signature'))) {
+        console.error("JWT Signature Error. Logging out.");
         clearAuth();
         window.location.href = 'index.html';
       }
@@ -63,21 +66,24 @@ function requireRole(expectedRole) {
   const token = getToken();
   const user = getUser();
 
-  console.log("Checking Auth Status...");
-  console.log("Token exists:", !!token);
-  console.log("User Object:", user);
+  console.log("--- Auth Check ---");
+  console.log("Token present:", !!token);
+  console.log("User in storage:", user);
 
   if (!token || !user) {
-    console.warn("No valid session found. Redirecting...");
+    console.warn("No session found. Redirecting to login...");
     window.location.href = 'index.html';
     return null;
   }
 
-  // Check role strictly but handle case-sensitivity
-  const userRole = user.role ? user.role.toUpperCase() : "";
-  if (userRole !== expectedRole.toUpperCase()) {
-    console.error(`Role Mismatch! Expected: ${expectedRole}, Got: ${userRole}`);
-    window.location.href = 'index.html';
+  // Handle various role formats (e.g., "LECTURER", "Lecturer", " lecturer ")
+  const userRole = (user.role || "").trim().toUpperCase();
+  const targetRole = expectedRole.trim().toUpperCase();
+
+  if (userRole !== targetRole) {
+    console.error(`Access Denied. Expected: ${targetRole}, but User is: ${userRole}`);
+    // If they are a student trying to access lecturer, send them to student dashboard instead
+    window.location.href = userRole === 'STUDENT' ? 'student.html' : 'index.html';
     return null;
   }
 

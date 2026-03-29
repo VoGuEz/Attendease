@@ -6,6 +6,67 @@
   <title>Sign Up – AttendEase</title>
   <link rel="stylesheet" href="css/styles.css?v=5" />
   <link rel="icon" type="image/png" href="images/logo.png" />
+  <style>
+    /* Scoped fixes for the signup card layout */
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+    }
+
+    #signup-form .form-group {
+      margin-bottom: 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #signup-form .form-group label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    #signup-form .form-group input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrapper input {
+      width: 100%;
+      box-sizing: border-box;
+      padding-right: 40px;
+    }
+
+    .password-wrapper .toggle-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .role-selector {
+      display: flex;
+      gap: 10px;
+    }
+
+    .role-selector .role-btn {
+      flex: 1;
+    }
+
+    #signup-form .btn {
+      width: 100%;
+      margin-top: 8px;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
 
@@ -24,30 +85,66 @@
       <div id="auth-msg" class="msg"></div>
 
       <form id="signup-form">
+
         <div class="form-group">
           <label for="fullName">Full Name</label>
-          <input type="text" id="fullName" name="fullName" placeholder="John Doe" autocomplete="name" required />
+          <input
+            type="text"
+            id="fullName"
+            name="fullName"
+            placeholder="John Doe"
+            autocomplete="name"
+            required
+          />
         </div>
+
         <div class="form-group">
           <label for="email">Email address</label>
-          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
         </div>
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" placeholder="Min. 6 characters" autocomplete="new-password" required />
-        </div>
+
         <div class="form-group">
           <label for="password">Password</label>
-          <div style="position:relative;">
-            <input type="password" id="password" name="password" placeholder="Min. 6 characters" autocomplete="new-password" required style="padding-right:36px;" />
-            <button type="button" id="toggle-password" tabindex="-1" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;">
-              <span id="toggle-password-icon" aria-label="Show password">👁️</span>
+          <div class="password-wrapper">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Min. 6 characters"
+              autocomplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-btn"
+              id="toggle-password"
+              tabindex="-1"
+              aria-label="Toggle password visibility"
+            >
+              <span id="toggle-password-icon">👁️</span>
             </button>
           </div>
         </div>
+
         <div class="form-group">
           <label for="confirmPassword">Confirm Password</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" required />
+          <input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            required
+          />
         </div>
+
         <div class="form-group">
           <label>I am a</label>
           <div class="role-selector">
@@ -55,7 +152,9 @@
             <button type="button" class="role-btn" data-role="lecturer">👨‍🏫 Lecturer</button>
           </div>
         </div>
-        <button type="submit" class="btn" style="width:100%; margin-top:8px">Create Account</button>
+
+        <button type="submit" class="btn">Create Account</button>
+
       </form>
 
       <div class="auth-footer">
@@ -71,6 +170,18 @@
     renderThemeSwitcher('theme-switcher-container');
     const user = getUser();
     if (user && getToken()) window.location.href = 'dashboard.html';
+
+    // Password toggle
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggle-password-icon');
+    if (toggleBtn && passwordInput) {
+      toggleBtn.addEventListener('click', () => {
+        const isHidden = passwordInput.type === 'password';
+        passwordInput.type = isHidden ? 'text' : 'password';
+        toggleIcon.textContent = isHidden ? '🙈' : '👁️';
+      });
+    }
   </script>
 </body>
 </html>

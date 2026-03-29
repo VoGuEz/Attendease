@@ -134,57 +134,16 @@ function initSignup() {
     setLoading(btn, true);
     try {
       const data = await apiRequest('/auth/register', 'POST', { email, password, fullName, role: selectedRole });
-      // Show verification code input
-      showVerificationPrompt(data.email);
+      // Registration returns token + user directly — store auth and redirect
+      setAuth(data.token, data.user);
+      showMsg('auth-msg', 'Account created! Redirecting...', 'success');
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 600);
     } catch (err) {
       showMsg('auth-msg', err.message, 'error');
     } finally {
       setLoading(btn, false);
     }
   });
-
-  function showVerificationPrompt(email) {
-    // Hide signup form, show code input
-    form.style.display = 'none';
-    let verifyDiv = document.getElementById('verify-section');
-    if (!verifyDiv) {
-      verifyDiv = document.createElement('div');
-      verifyDiv.id = 'verify-section';
-      verifyDiv.innerHTML = `
-        <h2>Email Verification</h2>
-        <div id="verify-msg" class="msg"></div>
-        <form id="verify-form">
-          <div class="form-group">
-            <label for="verify-code">Enter the 6-digit code sent to your email</label>
-            <input type="text" id="verify-code" maxlength="6" pattern="\\d{6}" required autocomplete="one-time-code" />
-          </div>
-          <button type="submit" class="btn">Verify Email</button>
-        </form>
-      `;
-      form.parentNode.appendChild(verifyDiv);
-    } else {
-      verifyDiv.style.display = '';
-    }
-    const verifyForm = document.getElementById('verify-form');
-    verifyForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const code = document.getElementById('verify-code').value.trim();
-      if (!code) {
-        showMsg('verify-msg', 'Please enter the code.', 'error');
-        return;
-      }
-      verifyForm.querySelector('button').disabled = true;
-      try {
-        await apiRequest('/auth/verify', 'POST', { email, code });
-        showMsg('verify-msg', 'Email verified! You can now sign in.', 'success');
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 1200);
-      } catch (err) {
-        showMsg('verify-msg', err.message, 'error');
-      } finally {
-        verifyForm.querySelector('button').disabled = false;
-      }
-    });
-  }
 }

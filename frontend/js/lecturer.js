@@ -115,6 +115,39 @@ function animateCount(el, target) {
   requestAnimationFrame(tick);
 }
 
+// ===== Session Code: fetch and inject into card =====
+async function loadAndShowCode(sessionId) {
+  const el = document.getElementById(`session-code-${sessionId}`);
+  if (!el) return;
+  try {
+    const data = await apiRequest(`/sessions/${sessionId}/code`);
+    const code = data?.code || data?.sessionCode || '------';
+    el.innerHTML = `
+      <div style="
+        display:inline-flex; align-items:center; gap:10px;
+        background:var(--bg-secondary); border:1px solid var(--border);
+        border-radius:10px; padding:8px 14px; margin-bottom:12px;">
+        <span style="font-size:12px; color:var(--text-secondary); font-weight:500;">SESSION CODE</span>
+        <span style="font-size:22px; font-weight:700; letter-spacing:6px; color:var(--success); font-family:monospace;">${escHtml(code)}</span>
+        <button onclick="copyCode('${escHtml(code)}')" title="Copy code"
+          style="background:none;border:none;cursor:pointer;font-size:16px;padding:0;line-height:1;">📋</button>
+      </div>`;
+  } catch (err) {
+    el.innerHTML = `<span style="font-size:12px;color:var(--text-secondary);">Code unavailable</span>`;
+  }
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => showToast('Session code copied!', 'success'));
+}
+
+// Builds a placeholder div that gets filled by loadAndShowCode()
+function buildCodeSlot(sessionId) {
+  return `<div id="session-code-${sessionId}" style="margin-bottom:4px;">
+    <span style="font-size:12px;color:var(--text-secondary);">Loading code…</span>
+  </div>`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('lecturer');
   if (!currentUser) return;
@@ -123,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setAvatarBadge(currentUser);
   renderThemeSwitcher('theme-switcher-container');
 
-  // Populate sidebar user info for mobile
   const sidebarUserName = document.getElementById('sidebar-user-name');
   const sidebarAvatar = document.getElementById('sidebar-avatar');
   if (sidebarUserName) sidebarUserName.textContent = currentUser.fullName;
@@ -132,11 +164,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     sidebarAvatar.textContent = initials;
   }
 
-  // Mobile menu functionality
   const hamburgerBtn = document.getElementById('hamburger-btn');
   const sidebar = document.getElementById('sidebar');
   const mobileOverlay = document.getElementById('mobile-overlay');
-  
+
   if (hamburgerBtn) {
     hamburgerBtn.addEventListener('click', () => {
       sidebarOpen = !sidebarOpen;
@@ -145,10 +176,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       mobileOverlay.classList.toggle('open');
     });
   }
-  
-  if (mobileOverlay) {
-    mobileOverlay.addEventListener('click', closeMobileMenu);
-  }
+
+  if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileMenu);
 
   document.getElementById('logout-btn').addEventListener('click', logout);
 
@@ -160,12 +189,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Scroll-to links for mobile hamburger menu
   document.querySelectorAll('[data-scroll]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       closeMobileMenu();
-      // Show overview section first, then scroll to the anchor
       showSection('overview');
       setTimeout(() => {
         const target = document.getElementById(link.dataset.scroll);
@@ -180,16 +207,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('form-edit-course').addEventListener('submit', handleEditCourse);
   document.getElementById('form-edit-session').addEventListener('submit', handleEditSession);
 
-  // Search/filter listeners
-  document.getElementById('search-courses')?.addEventListener('input', (e) => {
-    filterCards('courses-list', e.target.value);
-  });
-  document.getElementById('search-sessions')?.addEventListener('input', (e) => {
-    filterCards('sessions-detail', e.target.value);
-  });
-  document.getElementById('search-students')?.addEventListener('input', (e) => {
-    filterTableRows('students-list', e.target.value);
-  });
+  document.getElementById('search-courses')?.addEventListener('input', (e) => filterCards('courses-list', e.target.value));
+  document.getElementById('search-sessions')?.addEventListener('input', (e) => filterCards('sessions-detail', e.target.value));
+  document.getElementById('search-students')?.addEventListener('input', (e) => filterTableRows('students-list', e.target.value));
 
   document.querySelectorAll('.modal-close').forEach(btn => {
     btn.addEventListener('click', () => closeModal(btn.closest('.modal-overlay').id));
@@ -203,18 +223,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 function closeMobileMenu() {
   if (sidebarOpen) {
     sidebarOpen = false;
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const sidebar = document.getElementById('sidebar');
-    const mobileOverlay = document.getElementById('mobile-overlay');
-    
-    hamburgerBtn.classList.remove('active');
-    sidebar.classList.remove('open');
-    mobileOverlay.classList.remove('open');
+    document.getElementById('hamburger-btn').classList.remove('active');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('mobile-overlay').classList.remove('open');
   }
 }
 
 async function loadAll() {
-  // Show skeleton loaders
   renderSkeletonCards(document.getElementById('courses-list'));
   renderSkeletonCards(document.getElementById('active-sessions-list'), 2);
   renderSkeletonCards(document.getElementById('overview-sessions-list'), 2);
@@ -304,9 +319,8 @@ function renderActiveSessions(sessions) {
         </div>
         <span class="badge badge-active">Live</span>
       </div>
-      <div style="margin-bottom:12px;">
-        ${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}
-      </div>
+      ${buildCodeSlot(s.id)}
+      <div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>
       <div class="item-card-footer">
         <button class="btn btn-sm btn-outline" onclick="viewAttendance(${s.id})">📋 Attendance</button>
         <button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">⏹️ End Session</button>
@@ -314,6 +328,7 @@ function renderActiveSessions(sessions) {
     </div>
   `).join('');
   startCountdownTimers();
+  sessions.forEach(s => loadAndShowCode(s.id));
 }
 
 async function loadLecturerSessionsPanels() {
@@ -321,12 +336,8 @@ async function loadLecturerSessionsPanels() {
   const overviewContainer = document.getElementById('overview-sessions-list');
 
   if (!lecturerCourses.length) {
-    if (sessionsContainer) {
-      sessionsContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3><p>Create a course and add sessions to get started.</p></div>`;
-    }
-    if (overviewContainer) {
-      overviewContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3></div>`;
-    }
+    if (sessionsContainer) sessionsContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3><p>Create a course and add sessions to get started.</p></div>`;
+    if (overviewContainer) overviewContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><h3>No sessions yet</h3></div>`;
     return;
   }
 
@@ -334,12 +345,7 @@ async function loadLecturerSessionsPanels() {
     lecturerCourses.map(async (course) => {
       try {
         const sessions = await apiRequest(`/courses/${course.id}/sessions`);
-        return (sessions || []).map(s => ({
-          ...s,
-          courseId: course.id,
-          courseName: course.courseName,
-          courseCode: course.courseCode
-        }));
+        return (sessions || []).map(s => ({ ...s, courseId: course.id, courseName: course.courseName, courseCode: course.courseCode }));
       } catch (err) {
         console.error(`Failed to load sessions for course ${course.id}:`, err);
         return [];
@@ -347,13 +353,11 @@ async function loadLecturerSessionsPanels() {
     })
   );
 
-  const allSessions = courseSessions
-    .flat()
-    .sort((a, b) => {
-      const aDate = `${a.sessionDate || ''} ${a.startTime || ''}`;
-      const bDate = `${b.sessionDate || ''} ${b.startTime || ''}`;
-      return new Date(bDate) - new Date(aDate);
-    });
+  const allSessions = courseSessions.flat().sort((a, b) => {
+    const aDate = `${a.sessionDate || ''} ${a.startTime || ''}`;
+    const bDate = `${b.sessionDate || ''} ${b.startTime || ''}`;
+    return new Date(bDate) - new Date(aDate);
+  });
 
   renderSessionsSectionList(allSessions);
   renderOverviewSessionsList(allSessions);
@@ -378,6 +382,7 @@ function renderOverviewSessionsList(sessions) {
         </div>
         <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
       </div>
+      ${s.status === 'active' ? buildCodeSlot(s.id) : ''}
       ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
       <div class="item-card-footer">
         ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">▶️ Go Live</button>` : ''}
@@ -387,6 +392,7 @@ function renderOverviewSessionsList(sessions) {
     </div>
   `).join('');
   startCountdownTimers();
+  visible.filter(s => s.status === 'active').forEach(s => loadAndShowCode(s.id));
 }
 
 function renderSessionsSectionList(sessions) {
@@ -409,6 +415,7 @@ function renderSessionsSectionList(sessions) {
             </div>
             <span class="badge badge-${s.status}">${escHtml(s.status || 'upcoming')}</span>
           </div>
+          ${s.status === 'active' ? buildCodeSlot(s.id) : ''}
           ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
           <div class="item-card-footer">
             ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">▶️ Go Live</button>` : ''}
@@ -423,6 +430,7 @@ function renderSessionsSectionList(sessions) {
     </div>
   `;
   startCountdownTimers();
+  sessions.filter(s => s.status === 'active').forEach(s => loadAndShowCode(s.id));
 }
 
 function renderStudentsList(students) {
@@ -451,10 +459,7 @@ function renderStudentsList(students) {
 
 async function viewSessions(courseId, courseName) {
   showSection('sessions');
-  updateBreadcrumb(
-    { label: 'Sessions', onclick: "showSection('sessions')" },
-    { label: courseName }
-  );
+  updateBreadcrumb({ label: 'Sessions', onclick: "showSection('sessions')" }, { label: courseName });
   const container = document.getElementById('sessions-detail');
   renderSkeletonCards(container, 3);
 
@@ -484,6 +489,8 @@ async function viewSessions(courseId, courseName) {
               </div>
               <span class="badge badge-${s.status}">${s.status}</span>
             </div>
+            ${s.status === 'active' ? buildCodeSlot(s.id) : ''}
+            ${s.status === 'active' ? `<div style="margin-bottom:12px;">${buildCountdownRing(s.id, s.sessionDate, s.startTime, s.endTime)}</div>` : ''}
             <div class="item-card-footer">
               ${s.status === 'upcoming' ? `<button class="btn btn-sm btn-success" onclick="changeStatus(${s.id}, 'active', this)">▶️ Go Live</button>` : ''}
               ${s.status === 'active' ? `<button class="btn btn-sm btn-warning" onclick="changeStatus(${s.id}, 'completed', this)">⏹️ End</button>` : ''}
@@ -495,6 +502,8 @@ async function viewSessions(courseId, courseName) {
         `).join('')}
       </div>
     `;
+    startCountdownTimers();
+    sessions.filter(s => s.status === 'active').forEach(s => loadAndShowCode(s.id));
   } catch (err) {
     container.innerHTML = `<p class="text-danger">Failed to load: ${err.message}</p>`;
   }
@@ -502,10 +511,7 @@ async function viewSessions(courseId, courseName) {
 
 async function viewAttendance(sessionId) {
   showSection('sessions');
-  updateBreadcrumb(
-    { label: 'Sessions', onclick: "showSection('sessions')" },
-    { label: 'Attendance' }
-  );
+  updateBreadcrumb({ label: 'Sessions', onclick: "showSection('sessions')" }, { label: 'Attendance' });
   const container = document.getElementById('sessions-detail');
   renderSkeletonCards(container, 1);
 
@@ -515,7 +521,8 @@ async function viewAttendance(sessionId) {
     if (!records.length) {
       container.innerHTML = `
         <div style="margin-bottom:16px"><button class="btn btn-sm btn-outline" onclick="backToSessions()">← Back to Sessions</button></div>
-        <h3 style="margin-bottom:16px">Session Attendance</h3><div class="empty-state"><div class="empty-icon">📋</div><h3>No attendance yet</h3><p>No students have joined this session.</p></div>`;
+        <h3 style="margin-bottom:16px">Session Attendance</h3>
+        <div class="empty-state"><div class="empty-icon">📋</div><h3>No attendance yet</h3><p>No students have joined this session.</p></div>`;
       return;
     }
     const rows = records.map(r => `
@@ -541,7 +548,6 @@ async function viewAttendance(sessionId) {
         </table>
       </div>
     `;
-    // Store records for CSV export
     lastAttendanceData = { sessionId, records };
   } catch (err) {
     container.innerHTML = `<p class="text-danger">Failed: ${err.message}</p>`;
@@ -555,26 +561,14 @@ function backToSessions() {
 
 function downloadAttendanceCSV(sessionId) {
   const data = lastAttendanceData;
-  if (!data || data.sessionId !== sessionId || !data.records) {
-    showToast('No attendance data to download.', 'error');
-    return;
-  }
+  if (!data || data.sessionId !== sessionId || !data.records) { showToast('No attendance data to download.', 'error'); return; }
   const escape = val => {
     const str = String(val ?? '');
-    return str.includes(',') || str.includes('"') || str.includes('\n')
-      ? `"${str.replace(/"/g, '""')}"` : str;
+    return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str;
   };
   const lines = ['Student,Index Number,Level,Latitude,Longitude,Join Time,Status'];
   data.records.map(normalizeAttendanceRecord).forEach(r => {
-    lines.push([
-      escape(r.studentName || 'Unknown'),
-      escape(r.submittedIndexNumber || ''),
-      escape(r.submittedLevel || ''),
-      escape(r.latitude ?? ''),
-      escape(r.longitude ?? ''),
-      escape(r.joinTime || ''),
-      escape(r.status || '')
-    ].join(','));
+    lines.push([escape(r.studentName || 'Unknown'), escape(r.submittedIndexNumber || ''), escape(r.submittedLevel || ''), escape(r.latitude ?? ''), escape(r.longitude ?? ''), escape(r.joinTime || ''), escape(r.status || '')].join(','));
   });
   const csv = lines.join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -605,12 +599,7 @@ async function handleCreateCourse(e) {
   const courseName = document.getElementById('course-name').value.trim();
   const courseCode = document.getElementById('course-code').value.trim();
   const description = document.getElementById('course-desc').value.trim();
-
-  if (!courseName || !courseCode) {
-    showToast('Course name and code are required.', 'error');
-    return;
-  }
-
+  if (!courseName || !courseCode) { showToast('Course name and code are required.', 'error'); return; }
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
   try {
@@ -620,12 +609,8 @@ async function handleCreateCourse(e) {
     showToast('Course created successfully!', 'success');
     await loadCourses();
     updateStats();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Create Course';
-  }
+  } catch (err) { showToast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Create Course'; }
 }
 
 function openCreateSession(courseId, courseName) {
@@ -641,12 +626,7 @@ async function handleCreateSession(e) {
   const sessionDate = document.getElementById('session-date').value;
   const startTime = document.getElementById('session-start').value;
   const endTime = document.getElementById('session-end').value;
-
-  if (!sessionDate || !startTime || !endTime) {
-    showToast('All session fields are required.', 'error');
-    return;
-  }
-
+  if (!sessionDate || !startTime || !endTime) { showToast('All session fields are required.', 'error'); return; }
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
   try {
@@ -655,19 +635,15 @@ async function handleCreateSession(e) {
     e.target.reset();
     showToast('Session created successfully!', 'success');
     await loadAll();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Create Session';
-  }
+  } catch (err) { showToast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Create Session'; }
 }
 
 async function changeStatus(sessionId, status, btn) {
   btn.disabled = true;
   try {
     await apiRequest(`/sessions/${sessionId}/status`, 'PUT', { status });
-    showToast(`Session status updated to ${status}`, 'success');
+    showToast(`Session ${status === 'active' ? 'is now live! Code sent to students.' : 'ended.'}`, 'success');
     await loadAll();
   } catch (err) {
     showToast(err.message, 'error');
@@ -675,14 +651,10 @@ async function changeStatus(sessionId, status, btn) {
   }
 }
 
-function isMobile() {
-  return window.matchMedia('(max-width: 768px)').matches;
-}
+function isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
 
 function syncSectionLayout() {
-  const mobile = isMobile();
-  document.body.classList.toggle('mobile-single-page', mobile);
-
+  document.body.classList.toggle('mobile-single-page', isMobile());
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const currentSection = document.getElementById(`section-${activeSection}`) || document.getElementById('section-overview');
   if (currentSection) currentSection.classList.add('active');
@@ -693,32 +665,19 @@ function showSection(name) {
   document.querySelectorAll('[data-section]').forEach(l => {
     l.closest('li')?.classList.toggle('active', l.dataset.section === name);
   });
-
-  // Update breadcrumb for top-level sections
   const sectionLabels = { overview: 'Dashboard', courses: 'My Courses', sessions: 'Sessions', students: 'Students', settings: 'Settings' };
   updateBreadcrumb({ label: sectionLabels[name] || name });
-
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const section = document.getElementById(`section-${name}`);
   if (section) section.classList.add('active');
-
-  if (isMobile()) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  if (isMobile()) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function openModal(id) {
-  document.getElementById(id)?.classList.add('open');
-}
-
-function closeModal(id) {
-  document.getElementById(id)?.classList.remove('open');
-}
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 
 function formatLocation(latitude, longitude) {
-  if (latitude == null || longitude == null) {
-    return 'Not captured';
-  }
+  if (latitude == null || longitude == null) return 'Not captured';
   return `${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)}`;
 }
 
@@ -727,40 +686,21 @@ function showToast(msg, type = 'success') {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.style.cssText = `
-    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
-    background: ${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--warning)'};
-    color: white; padding: 12px 20px; border-radius: 8px;
-    font-size: 14px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    display: flex; align-items: center; gap: 12px; max-width: 420px;
-  `;
-
-  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
-  const iconEl = document.createElement('span');
-  iconEl.textContent = icon;
-  toast.appendChild(iconEl);
-
+  toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:1000;
+    background:${type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--danger)' : 'var(--warning)'};
+    color:white;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;
+    box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;max-width:420px;`;
+  const icon = document.createElement('span');
+  icon.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️';
   const text = document.createElement('span');
-  text.textContent = msg;
-  text.style.flex = '1';
-  toast.appendChild(text);
-
+  text.textContent = msg; text.style.flex = '1';
   const closeBtn = document.createElement('button');
-  closeBtn.textContent = '\u00D7';
+  closeBtn.textContent = '×';
   closeBtn.style.cssText = 'background:none;border:none;color:white;font-size:18px;cursor:pointer;padding:0 2px;line-height:1;';
-  closeBtn.addEventListener('click', () => {
-    toast.classList.add('toast-exit');
-    toast.addEventListener('animationend', () => toast.remove());
-  });
-  toast.appendChild(closeBtn);
-
+  closeBtn.addEventListener('click', () => { toast.classList.add('toast-exit'); toast.addEventListener('animationend', () => toast.remove()); });
+  toast.append(icon, text, closeBtn);
   document.body.appendChild(toast);
-  setTimeout(() => {
-    if (toast.parentNode) {
-      toast.classList.add('toast-exit');
-      toast.addEventListener('animationend', () => toast.remove());
-    }
-  }, 5000);
+  setTimeout(() => { if (toast.parentNode) { toast.classList.add('toast-exit'); toast.addEventListener('animationend', () => toast.remove()); } }, 5000);
 }
 
 function escHtml(str) {
@@ -768,8 +708,6 @@ function escHtml(str) {
   div.appendChild(document.createTextNode(String(str)));
   return div.innerHTML;
 }
-
-// ===== Edit/Delete Course =====
 
 function openEditCourse(courseId) {
   const course = lecturerCourses.find(c => c.id === courseId);
@@ -811,12 +749,9 @@ async function confirmDeleteCourse(courseId, courseName) {
         showToast('Course deleted successfully!', 'success');
         await loadAll();
       } catch (err) { showToast(err.message, 'error'); }
-    },
-    '🗑️'
+    }, '🗑️'
   );
 }
-
-// ===== Edit/Delete Session =====
 
 function openEditSession(sessionId, sessionDate, startTime, endTime) {
   document.getElementById('edit-session-id').value = sessionId;
@@ -855,14 +790,12 @@ async function confirmDeleteSession(sessionId) {
         showToast('Session deleted successfully!', 'success');
         await loadAll();
       } catch (err) { showToast(err.message, 'error'); }
-    },
-    '🗑️'
+    }, '🗑️'
   );
 }
 
 // ===== Countdown Timer =====
-
-const COUNTDOWN_CIRCUMFERENCE = 2 * Math.PI * 20; // radius=20
+const COUNTDOWN_CIRCUMFERENCE = 2 * Math.PI * 20;
 
 function buildCountdownRing(sessionId, sessionDate, startTime, endTime) {
   return `
@@ -871,15 +804,13 @@ function buildCountdownRing(sessionId, sessionDate, startTime, endTime) {
       <svg viewBox="0 0 48 48">
         <circle class="ring-bg" cx="24" cy="24" r="20" />
         <circle class="ring-progress" cx="24" cy="24" r="20"
-                stroke-dasharray="${COUNTDOWN_CIRCUMFERENCE}"
-                stroke-dashoffset="0" />
+                stroke-dasharray="${COUNTDOWN_CIRCUMFERENCE}" stroke-dashoffset="0" />
       </svg>
       <div class="countdown-label">
         <span class="countdown-time">--:--</span>
         <small>remaining</small>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 function startCountdownTimers() {
@@ -893,33 +824,21 @@ function updateAllCountdowns() {
     const endStr = el.dataset.end;
     const startStr = el.dataset.start;
     if (!endStr || !startStr) return;
-
-    const now = new Date();
-    const end = new Date(endStr);
-    const start = new Date(startStr);
-
-    const totalDuration = end - start;
+    const now = new Date(), end = new Date(endStr), start = new Date(startStr);
     const remaining = end - now;
-
     const ring = el.querySelector('.ring-progress');
     const label = el.querySelector('.countdown-time');
-
     if (remaining <= 0) {
       label.textContent = '0:00';
       ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE;
-      ring.classList.remove('warning');
-      ring.classList.add('danger');
+      ring.classList.remove('warning'); ring.classList.add('danger');
       return;
     }
-
-    const fraction = Math.max(0, Math.min(1, remaining / totalDuration));
+    const fraction = Math.max(0, Math.min(1, remaining / (end - start)));
     ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE * (1 - fraction);
-
-    // Color based on remaining fraction
     ring.classList.remove('warning', 'danger');
     if (fraction <= 0.15) ring.classList.add('danger');
     else if (fraction <= 0.35) ring.classList.add('warning');
-
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
     label.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -927,15 +846,12 @@ function updateAllCountdowns() {
 }
 
 // ===== Search/Filter =====
-
 function filterCards(containerId, query) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const q = query.toLowerCase().trim();
-  const cards = container.querySelectorAll('.item-card');
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    card.style.display = q === '' || text.includes(q) ? '' : 'none';
+  container.querySelectorAll('.item-card').forEach(card => {
+    card.style.display = q === '' || card.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 }
 
@@ -943,9 +859,7 @@ function filterTableRows(containerId, query) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const q = query.toLowerCase().trim();
-  const rows = container.querySelectorAll('tbody tr');
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = q === '' || text.includes(q) ? '' : 'none';
+  container.querySelectorAll('tbody tr').forEach(row => {
+    row.style.display = q === '' || row.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 }

@@ -33,7 +33,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
     
-    // Check for 401 (Unauthorized)
+    // Check for 401 (Unauthorized) - kicks user out if token is expired
     if (response.status === 401) {
       clearAuth();
       window.location.href = 'index.html';
@@ -43,8 +43,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     const data = await response.json();
 
     if (!response.ok) {
-      // FIX: If the error message mentions JWT or Signature, it's a broken token.
-      // We must clear it, otherwise the user is stuck in an error loop.
+      // Broken token fix: Clears session if backend rejects the signature
       if (data.message && (data.message.includes('JWT') || data.message.includes('signature'))) {
         console.warn("Invalid JWT detected. Clearing session...");
         clearAuth();
@@ -73,8 +72,9 @@ function requireAuth() {
 function requireRole(role) {
   const user = requireAuth();
   if (!user) return null;
-  if (user.role !== role) {
-    window.location.href = 'dashboard.html';
+  // Case-insensitive role check
+  if (user.role.toLowerCase() !== role.toLowerCase()) {
+    window.location.href = 'index.html';
     return null;
   }
   return user;

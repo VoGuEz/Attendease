@@ -2,27 +2,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const signupForm = document.getElementById('signup-form');
 
-  // Password visibility toggle
-  const passwordInput = document.getElementById('password');
-  const toggleBtn = document.getElementById('toggle-password');
-  const toggleIcon = document.getElementById('toggle-password-icon');
-  if (passwordInput && toggleBtn && toggleIcon) {
-    toggleBtn.addEventListener('click', () => {
-      if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleIcon.textContent = '🙈';
-        toggleIcon.setAttribute('aria-label', 'Hide password');
-      } else {
-        passwordInput.type = 'password';
-        toggleIcon.textContent = '👁️';
-        toggleIcon.setAttribute('aria-label', 'Show password');
-      }
-    });
-  }
+  // Unified Password Toggle Logic
+  setupPasswordToggle('toggle-password', 'password', 'toggle-password-icon');
+  setupPasswordToggle('toggle-confirm', 'confirmPassword', 'toggle-confirm-icon');
 
   if (loginForm) initLogin();
   if (signupForm) initSignup();
 });
+
+// Helper function to handle any password field toggle
+function setupPasswordToggle(btnId, inputId, iconId) {
+  const btn = document.getElementById(btnId);
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+
+  if (btn && input && icon) {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault(); // Stop form submission
+      e.stopPropagation(); // Stop event bubbling
+
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      icon.textContent = isPassword ? '🙈' : '👁️';
+      
+      // Accessibility update
+      btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      
+      // Keep focus on the input for better UX
+      input.focus();
+    });
+  }
+}
 
 function showMsg(id, text, type) {
   const el = document.getElementById(id);
@@ -44,20 +54,9 @@ function setLoading(btn, loading) {
 
 function isValidEmailDomain(email) {
   const pattern = /^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,63}$/;
-  const reservedDomains = new Set(['example.com', 'example.org', 'example.net', 'localhost', 'localdomain']);
-  const reservedSuffixes = ['.example', '.invalid', '.localhost', '.test'];
-
   if (!pattern.test(email)) return false;
-
   const domain = email.split('@')[1]?.toLowerCase();
-  if (!domain) return false;
-
-  if (domain === 'gmail.com' || domain === 'yahoo.com') return true;
-
-  if (reservedDomains.has(domain)) return false;
-  if (reservedSuffixes.some(suffix => domain.endsWith(suffix))) return false;
-
-  return domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.');
+  return domain && domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.');
 }
 
 /* ===== LOGIN ===== */
@@ -95,8 +94,10 @@ function initSignup() {
   const form = document.getElementById('signup-form');
   let selectedRole = 'student';
 
+  // Role selection logic
   document.querySelectorAll('.role-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       selectedRole = btn.dataset.role;
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -117,7 +118,7 @@ function initSignup() {
     }
 
     if (!isValidEmailDomain(email.toLowerCase())) {
-      showMsg('auth-msg', 'Use a real public email domain (e.g., @gmail.com, @yahoo.com, school.edu, or company.com).', 'error');
+      showMsg('auth-msg', 'Use a valid email address.', 'error');
       return;
     }
 

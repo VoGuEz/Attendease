@@ -12,11 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthService {
     private final UserRepository userRepository;
+    private final EmailService emailService;
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
     private final Random random = new Random();
 
-    public AuthService(UserRepository userRepository, Object ignored1, Object ignored2) {
+    public AuthService(UserRepository userRepository, EmailService emailService) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     public Map<String, Object> register(String email, String password, String fullName, String role) {
@@ -69,7 +71,9 @@ public class AuthService {
             // Generate 6-digit code
             String resetCode = String.format("%06d", random.nextInt(1000000));
             resetTokens.put(resetCode, email);
-            System.out.println("[AuthService] Password reset code for " + email + ": " + resetCode);
+            System.out.println("[AuthService] Sending password reset code to: " + email);
+            // Actually send the email now
+            emailService.sendResetCode(email, resetCode);
         }
 
         return Map.of("message", "If that email exists, a reset code has been sent.");

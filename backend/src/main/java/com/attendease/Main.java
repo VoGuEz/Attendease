@@ -11,6 +11,7 @@ import com.attendease.repositories.UserRepository;
 import com.attendease.services.AttendanceService;
 import com.attendease.services.AuthService;
 import com.attendease.services.CourseService;
+import com.attendease.services.EmailService;
 import com.attendease.services.SessionService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -64,7 +65,8 @@ public class Main {
         AttendanceRepository attendanceRepository = new AttendanceRepository(dataSource);
 
         // Services
-        AuthService       authService       = new AuthService(userRepository, null, null);
+        EmailService      emailService      = new EmailService();
+        AuthService       authService       = new AuthService(userRepository, emailService);
         CourseService     courseService     = new CourseService(courseRepository);
         SessionService    sessionService    = new SessionService(sessionRepository);
         AttendanceService attendanceService = new AttendanceService(attendanceRepository, sessionRepository);
@@ -77,15 +79,15 @@ public class Main {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        server.createContext("/api/auth/register",     e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRegister(e); });
-        server.createContext("/api/auth/login",        e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleLogin(e); });
-        server.createContext("/api/auth/update-name",  e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleUpdateName(e); });
-        server.createContext("/api/auth/request-reset",e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRequestReset(e); });
+        server.createContext("/api/auth/register",      e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRegister(e); });
+        server.createContext("/api/auth/login",         e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleLogin(e); });
+        server.createContext("/api/auth/update-name",   e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleUpdateName(e); });
+        server.createContext("/api/auth/request-reset", e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRequestReset(e); });
         server.createContext("/api/auth/reset-password",e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleResetPassword(e); });
-        server.createContext("/api/students",          e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleGetStudents(e); });
-        server.createContext("/api/courses",           e -> { addCorsHeaders(e); if (!handlePreflight(e)) courseHandler.handle(e); });
-        server.createContext("/api/sessions",          e -> { addCorsHeaders(e); if (!handlePreflight(e)) sessionHandler.handle(e); });
-        server.createContext("/api/attendance",        e -> { addCorsHeaders(e); if (!handlePreflight(e)) attendanceHandler.handle(e); });
+        server.createContext("/api/students",           e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleGetStudents(e); });
+        server.createContext("/api/courses",            e -> { addCorsHeaders(e); if (!handlePreflight(e)) courseHandler.handle(e); });
+        server.createContext("/api/sessions",           e -> { addCorsHeaders(e); if (!handlePreflight(e)) sessionHandler.handle(e); });
+        server.createContext("/api/attendance",         e -> { addCorsHeaders(e); if (!handlePreflight(e)) attendanceHandler.handle(e); });
 
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();

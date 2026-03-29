@@ -14,48 +14,51 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
 
-    // THIS IS THE CRITICAL FIX: The parameters must match Main.java exactly
     public AuthService(UserRepository userRepository, EmailService emailService, JwtTokenProvider tokenProvider) {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.tokenProvider = tokenProvider;
     }
 
-    public Map<String, Object> login(String email, String password) {
-        User user = userRepository.findByEmail(email);
-        if (user == null || !PasswordUtil.checkPassword(password, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
-        }
-
-        // Use the new tokenProvider instead of the old JwtUtil
-        String token = tokenProvider.generateToken(user.getEmail());
+    // signature: 4 strings
+    public Map<String, Object> register(String email, String password, String fullName, String role) {
+        String hashed = PasswordUtil.hashPassword(password);
+        User user = new User(email, hashed, fullName, role != null ? role : "student");
+        userRepository.save(user);
+        
+        User saved = userRepository.findByEmail(email);
+        String token = tokenProvider.generateToken(saved.getEmail());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("user", userToMap(user));
+        result.put("user", Map.of("email", saved.getEmail(), "fullName", saved.getFullName()));
         return result;
     }
 
-    public Map<String, Object> requestPasswordReset(String email) {
+    public Map<String, Object> login(String email, String password) {
         User user = userRepository.findByEmail(email);
-        if (user != null) {
-            String resetToken = UUID.randomUUID().toString().substring(0, 8);
-            resetTokens.put(resetToken, email);
-            
-            // This now calls your real EmailService
-            emailService.sendResetCode(email, resetToken);
+        if (user == null || !PasswordUtil.checkPassword(password, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid credentials");
         }
-        return Map.of("message", "If that email exists, a reset code has been sent.");
+        String token = tokenProvider.generateToken(user.getEmail());
+        return Map.of("token", token, "user", Map.of("email", user.getEmail()));
     }
 
-    private Map<String, Object> userToMap(User user) {
-        Map<String, Object> m = new HashMap<>();
-        m.put("id", user.getId());
-        m.put("email", user.getEmail());
-        m.put("fullName", user.getFullName());
-        m.put("role", user.getRole());
-        return m;
+    public Map<String, Object> requestPasswordReset(String email) {
+        String resetToken = UUID.randomUUID().toString().substring(0, 8);
+        resetTokens.put(resetToken, email);
+        emailService.sendResetCode(email, resetToken);
+        return Map.of("message", "Reset code sent");
     }
-    
-    // Include your resetPassword and other methods here...
+
+    // signature: 2 strings
+    public Map<String, Object> resetPassword(String token, String newPassword) {
+        String email = resetTokens.get(token);
+        if (email == null) throw new IllegalArgumentException("Invalid token");
+        
+        User user = userRepository.findByEmail(email);
+        userRepository.updatePassword(user.getId(), PasswordUtil.hashPassword(newPassword));
+        resetTokens.remove(token);
+        return Map.of("message", "Success");
+    }
 }

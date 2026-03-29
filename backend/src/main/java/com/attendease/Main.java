@@ -4,34 +4,24 @@ import com.attendease.handlers.AttendanceHandler;
 import com.attendease.handlers.AuthHandler;
 import com.attendease.handlers.CourseHandler;
 import com.attendease.handlers.SessionHandler;
-import com.attendease.repositories.UserRepository;
-import com.attendease.services.AuthService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.concurrent.Executors;
 
 public class Main {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        String dbUrl = System.getenv("DATABASE_URL");
-        Connection conn = DriverManager.getConnection(dbUrl);
-
-        UserRepository userRepository = new UserRepository(conn);
-        AuthService authService = new AuthService(userRepository, null, null);
-
-        AuthHandler authHandler = new AuthHandler(authService, userRepository);
+        AuthHandler authHandler = new AuthHandler();
         CourseHandler courseHandler = new CourseHandler();
         SessionHandler sessionHandler = new SessionHandler();
         AttendanceHandler attendanceHandler = new AttendanceHandler();
-
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         server.createContext("/api/auth/register", exchange -> {
             addCorsHeaders(exchange);

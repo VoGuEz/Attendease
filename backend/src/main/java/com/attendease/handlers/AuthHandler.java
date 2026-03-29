@@ -3,6 +3,7 @@ package com.attendease.handlers;
 import com.attendease.models.User;
 import com.attendease.repositories.UserRepository;
 import com.attendease.services.AuthService;
+import com.attendease.utils.JwtUtil;
 import com.attendease.utils.ResponseUtil;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -37,7 +38,6 @@ public class AuthHandler {
             String fullName = getStringOrNull(json, "fullName");
             String role     = getStringOrNull(json, "role");
 
-            // Correctly calling the 4-parameter register method
             Map<String, Object> result = authService.register(email, password, fullName, role);
             ResponseUtil.sendResponse(exchange, 201, result);
         } catch (IllegalArgumentException e) {
@@ -72,14 +72,17 @@ public class AuthHandler {
             ResponseUtil.sendError(exchange, 405, "Method not allowed");
             return;
         }
-        // Since we are refactoring, for now, we will handle basic updates. 
-        // Real token validation should happen in a Middleware/Filter later.
         try {
+            // Extract userId from JWT token, not from the request body
+            String token = JwtUtil.extractTokenFromHeader(exchange.getRequestHeaders().getFirst("Authorization"));
+            if (token == null) {
+                ResponseUtil.sendError(exchange, 401, "Unauthorized");
+                return;
+            }
+            int userId = JwtUtil.getUserId(token);
+
             String body = ResponseUtil.readBody(exchange);
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            
-            // For now, we expect ID and Name in the body for the update
-            int userId = json.get("userId").getAsInt(); 
             String fullName = getStringOrNull(json, "fullName");
 
             if (fullName == null || fullName.isBlank()) {
@@ -129,7 +132,7 @@ public class AuthHandler {
             String body = ResponseUtil.readBody(exchange);
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
             String email = getStringOrNull(json, "email");
-            
+
             Map<String, Object> result = authService.requestPasswordReset(email);
             ResponseUtil.sendResponse(exchange, 200, result);
         } catch (Exception e) {
@@ -148,7 +151,6 @@ public class AuthHandler {
             String token       = getStringOrNull(json, "token");
             String newPassword = getStringOrNull(json, "newPassword");
 
-            // Correctly calling the 2-parameter resetPassword method
             Map<String, Object> result = authService.resetPassword(token, newPassword);
             ResponseUtil.sendResponse(exchange, 200, result);
         } catch (IllegalArgumentException e) {

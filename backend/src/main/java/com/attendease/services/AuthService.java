@@ -7,13 +7,12 @@ import com.attendease.utils.PasswordUtil;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthService {
     private final UserRepository userRepository;
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
-    private final Random random = new Random();
 
     public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordUtil passwordUtil) {
         this.userRepository = userRepository;
@@ -67,20 +66,19 @@ public class AuthService {
             return Map.of("message", "If that email exists, a reset code has been sent.");
         }
 
-        // Generate a 6-digit numeric code
-        String resetCode = String.format("%06d", random.nextInt(1000000));
-        resetTokens.put(resetCode, email);
-        System.out.println("[AuthService] Password reset code for " + email + ": " + resetCode);
+        String resetToken = UUID.randomUUID().toString();
+        resetTokens.put(resetToken, email);
+        System.out.println("[AuthService] Password reset token for " + email + ": " + resetToken);
 
         return Map.of("message", "If that email exists, a reset code has been sent.");
     }
 
-    public Map<String, Object> resetPassword(String resetCode, String newPassword) {
-        if (resetCode == null || resetCode.isBlank()) throw new IllegalArgumentException("Reset code is required");
+    public Map<String, Object> resetPassword(String resetToken, String newPassword) {
+        if (resetToken == null || resetToken.isBlank()) throw new IllegalArgumentException("Reset token is required");
         if (newPassword == null || newPassword.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters");
 
-        String email = resetTokens.get(resetCode);
-        if (email == null) throw new IllegalArgumentException("Invalid or expired reset code");
+        String email = resetTokens.get(resetToken);
+        if (email == null) throw new IllegalArgumentException("Invalid or expired reset token");
 
         User user = userRepository.findByEmail(email);
         if (user == null) throw new IllegalArgumentException("User not found");
@@ -88,7 +86,7 @@ public class AuthService {
         String hashed = PasswordUtil.hashPassword(newPassword);
         userRepository.updatePassword(user.getId(), hashed);
 
-        resetTokens.remove(resetCode);
+        resetTokens.remove(resetToken);
         return Map.of("message", "Password reset successfully");
     }
 

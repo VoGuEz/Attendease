@@ -17,8 +17,12 @@ import java.util.stream.Collectors;
 
 public class AuthHandler {
 
-    private final AuthService authService = new AuthService();
+    private final AuthService authService;
     private final UserRepository userRepository = new UserRepository();
+
+    public AuthHandler(AuthService authService) {
+        this.authService = authService;
+    }
 
     public void handleRegister(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -28,10 +32,10 @@ public class AuthHandler {
         try {
             String body = ResponseUtil.readBody(exchange);
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            String email = getStringOrNull(json, "email");
+            String email    = getStringOrNull(json, "email");
             String password = getStringOrNull(json, "password");
             String fullName = getStringOrNull(json, "fullName");
-            String role = getStringOrNull(json, "role");
+            String role     = getStringOrNull(json, "role");
 
             Map<String, Object> result = authService.register(email, password, fullName, role);
             ResponseUtil.sendResponse(exchange, 201, result);
@@ -50,7 +54,7 @@ public class AuthHandler {
         try {
             String body = ResponseUtil.readBody(exchange);
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            String email = getStringOrNull(json, "email");
+            String email    = getStringOrNull(json, "email");
             String password = getStringOrNull(json, "password");
 
             Map<String, Object> result = authService.login(email, password);
@@ -90,7 +94,7 @@ public class AuthHandler {
                 return;
             }
 
-            String role = JwtUtil.getRole(token);
+            String role  = JwtUtil.getRole(token);
             String email = JwtUtil.validateToken(token).get("email", String.class);
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("id", userId);
@@ -136,13 +140,6 @@ public class AuthHandler {
         }
     }
 
-    private String getStringOrNull(JsonObject json, String key) {
-        if (json.has(key) && !json.get(key).isJsonNull()) {
-            return json.get(key).getAsString();
-        }
-        return null;
-    }
-
     public void handleRequestReset(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             ResponseUtil.sendError(exchange, 405, "Method not allowed");
@@ -157,9 +154,7 @@ public class AuthHandler {
         } catch (IllegalArgumentException e) {
             ResponseUtil.sendError(exchange, 400, e.getMessage());
         } catch (Exception e) {
-            System.err.println("[AuthHandler] Reset request failed: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
-            ResponseUtil.sendError(exchange, 500, "Failed to send reset email: " + e.getMessage());
+            ResponseUtil.sendError(exchange, 500, "Failed to process reset request: " + e.getMessage());
         }
     }
 
@@ -171,7 +166,7 @@ public class AuthHandler {
         try {
             String body = ResponseUtil.readBody(exchange);
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
-            String token = getStringOrNull(json, "token");
+            String token       = getStringOrNull(json, "token");
             String newPassword = getStringOrNull(json, "newPassword");
             Map<String, Object> result = authService.resetPassword(token, newPassword);
             ResponseUtil.sendResponse(exchange, 200, result);
@@ -180,5 +175,12 @@ public class AuthHandler {
         } catch (Exception e) {
             ResponseUtil.sendError(exchange, 500, "Internal server error");
         }
+    }
+
+    private String getStringOrNull(JsonObject json, String key) {
+        if (json.has(key) && !json.get(key).isJsonNull()) {
+            return json.get(key).getAsString();
+        }
+        return null;
     }
 }

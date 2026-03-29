@@ -13,13 +13,25 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      /* These now correctly pull from your themes.js logic */
       background-color: var(--bg, #121212);
       color: var(--text, #ffffff);
+      overflow: hidden; /* Prevents scrollbars if wallpaper floats move out of bounds */
+    }
+
+    /* Container for the floating wallpaper icons */
+    #wallpaper-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1; /* Sits behind everything */
+      pointer-events: none;
     }
 
     .welcome-card {
-      background: var(--bg-secondary, #1e1e1e);
+      background: var(--card-bg, rgba(30, 30, 30, 0.9)); /* Added transparency for wallpaper to show through */
+      backdrop-filter: blur(10px); /* Makes the card look modern over the wallpaper */
       padding: 40px;
       border-radius: 24px;
       text-align: center;
@@ -27,6 +39,8 @@
       max-width: 380px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
       border: 1px solid var(--border, #333);
+      position: relative;
+      z-index: 10;
     }
 
     .welcome-logo-img {
@@ -52,14 +66,14 @@
       border-radius: 12px;
       cursor: pointer;
       color: white;
-      transition: transform 0.2s;
+      transition: transform 0.2s, opacity 0.2s;
     }
 
     #go-dashboard-btn:hover {
       transform: translateY(-2px);
+      opacity: 0.9;
     }
 
-    /* Use theme variables for button colors if possible, or keep these overrides */
     .btn-student { background-color: #008c9e !important; }
     .btn-lecturer { background-color: #2938b8 !important; }
 
@@ -67,17 +81,20 @@
       position: fixed;
       top: 20px;
       right: 20px;
+      z-index: 100;
     }
   </style>
 </head>
 <body>
+
+  <div id="wallpaper-container"></div>
 
   <div class="theme-switcher-corner" id="theme-switcher-container"></div>
 
   <div class="dashboard-welcome">
     <div class="welcome-card">
       <img src="images/logo.png" alt="AttendEase Logo" class="welcome-logo-img" />
-      <h1 style="margin-bottom: 8px; color: var(--text);">AttendEase</h1>
+      <h1 style="margin-bottom: 8px;">AttendEase</h1>
       <p id="welcome-msg" style="color: var(--text-secondary); margin-bottom: 20px;">Welcome back!</p>
 
       <div style="margin-bottom: 24px;">
@@ -93,49 +110,58 @@
 
   <script src="js/api.js?v=2"></script>
   <script src="js/themes.js?v=3"></script>
+  <script src="js/lecturer.js?v=4"></script> 
+
   <script>
-    // --- 1. THEME FIX ---
-    // Immediately apply the saved theme before doing anything else
-    if (typeof initTheme === 'function') {
-      initTheme(); 
-    } else if (typeof applyTheme === 'function') {
-      // Fallback if your function is named applyTheme
-      const savedTheme = localStorage.getItem('theme-id') || 'dark';
-      applyTheme(savedTheme);
-    }
-
-    // Render the switcher UI
-    if (typeof renderThemeSwitcher === 'function') {
-      renderThemeSwitcher('theme-switcher-container');
-    }
-
-    // --- 2. AUTH & CONTENT ---
-    const user = requireAuth(); 
-    
-    if (user) {
-      document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
-
-      const badge = document.getElementById('role-badge');
-      const btn = document.getElementById('go-dashboard-btn');
-      
-      btn.style.display = 'flex';
-
-      if (user.role === 'student') {
-        badge.textContent = '🎓 Student';
-        badge.className = 'badge badge-active'; 
-        btn.textContent = '🎓 Student Dashboard →';
-        btn.classList.add('btn-student');
-      } else {
-        badge.textContent = '👨‍🏫 Lecturer';
-        badge.className = 'badge badge-upcoming'; 
-        btn.textContent = '👨‍🏫 Lecturer Dashboard →';
-        btn.classList.add('btn-lecturer');
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. APPLY THEME
+      if (typeof applyTheme === 'function') {
+        const savedTheme = localStorage.getItem('theme-id') || 'dark';
+        applyTheme(savedTheme);
       }
 
-      btn.addEventListener('click', () => {
-        window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
-      });
-    }
+      // 2. APPLY WALLPAPER
+      // This looks for your saved wallpaper and injects the floating icons
+      if (typeof applyWallpaper === 'function') {
+        const savedWallpaper = localStorage.getItem('selected-wallpaper') || 'waves';
+        applyWallpaper(savedWallpaper);
+      } else if (typeof renderWallpaperPicker === 'function') {
+        // If applyWallpaper isn't a standalone function, we trigger it via initialization
+        console.log("Wallpaper logic initialized");
+      }
+
+      // 3. RENDER THEME SWITCHER UI
+      if (typeof renderThemeSwitcher === 'function') {
+        renderThemeSwitcher('theme-switcher-container');
+      }
+
+      // 4. AUTH & ROLE LOGIC
+      const user = requireAuth(); 
+      if (user) {
+        document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
+
+        const badge = document.getElementById('role-badge');
+        const btn = document.getElementById('go-dashboard-btn');
+        
+        btn.style.display = 'flex';
+
+        if (user.role === 'student') {
+          badge.textContent = '🎓 Student';
+          badge.className = 'badge badge-active'; 
+          btn.textContent = '🎓 Student Dashboard →';
+          btn.classList.add('btn-student');
+        } else {
+          badge.textContent = '👨‍🏫 Lecturer';
+          badge.className = 'badge badge-upcoming'; 
+          btn.textContent = '👨‍🏫 Lecturer Dashboard →';
+          btn.classList.add('btn-lecturer');
+        }
+
+        btn.addEventListener('click', () => {
+          window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
+        });
+      }
+    });
   </script>
 </body>
 </html>

@@ -13,32 +13,31 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background-color: var(--bg, #121212);
-      color: var(--text, #ffffff);
-      overflow: hidden; /* Prevents scrollbars if wallpaper floats move out of bounds */
+      background-color: var(--bg-primary, #121212);
+      color: var(--text-primary, #ffffff);
+      overflow: hidden;
     }
 
-    /* Container for the floating wallpaper icons */
     #wallpaper-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -1; /* Sits behind everything */
+      z-index: -1;
       pointer-events: none;
     }
 
     .welcome-card {
-      background: var(--card-bg, rgba(30, 30, 30, 0.9)); /* Added transparency for wallpaper to show through */
-      backdrop-filter: blur(10px); /* Makes the card look modern over the wallpaper */
+      background: var(--bg-card, rgba(30, 30, 30, 0.9));
+      backdrop-filter: blur(10px);
       padding: 40px;
       border-radius: 24px;
       text-align: center;
       width: 100%;
       max-width: 380px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--border, #333);
+      border: 1px solid var(--border-color, #333);
       position: relative;
       z-index: 10;
     }
@@ -74,7 +73,7 @@
       opacity: 0.9;
     }
 
-    .btn-student { background-color: #008c9e !important; }
+    .btn-student  { background-color: #008c9e !important; }
     .btn-lecturer { background-color: #2938b8 !important; }
 
     .theme-switcher-corner {
@@ -88,7 +87,6 @@
 <body>
 
   <div id="wallpaper-container"></div>
-
   <div class="theme-switcher-corner" id="theme-switcher-container"></div>
 
   <div class="dashboard-welcome">
@@ -113,20 +111,17 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. APPLY THEME
+
+      // 1. APPLY THEME — use correct key matching themes.js
       if (typeof applyTheme === 'function') {
-        const savedTheme = localStorage.getItem('theme-id') || 'dark';
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         applyTheme(savedTheme);
       }
 
-      // 2. APPLY WALLPAPER
-      // This looks for your saved wallpaper and injects the floating icons
+      // 2. APPLY WALLPAPER — use correct key matching themes.js
       if (typeof applyWallpaper === 'function') {
-        const savedWallpaper = localStorage.getItem('selected-wallpaper') || 'waves';
+        const savedWallpaper = localStorage.getItem('wallpaper') || 'none';
         applyWallpaper(savedWallpaper);
-      } else if (typeof renderWallpaperPicker === 'function') {
-        // If applyWallpaper isn't a standalone function, we trigger it via initialization
-        console.log("Wallpaper logic initialized");
       }
 
       // 3. RENDER THEME SWITCHER UI
@@ -135,24 +130,24 @@
       }
 
       // 4. AUTH & ROLE LOGIC
-      const user = requireAuth(); 
+      const user = requireAuth();
       if (user) {
         document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
 
         const badge = document.getElementById('role-badge');
-        const btn = document.getElementById('go-dashboard-btn');
-        
+        const btn   = document.getElementById('go-dashboard-btn');
+
         btn.style.display = 'flex';
 
         if (user.role === 'student') {
           badge.textContent = '🎓 Student';
-          badge.className = 'badge badge-active'; 
-          btn.textContent = '🎓 Student Dashboard →';
+          badge.className   = 'badge badge-active';
+          btn.textContent   = '🎓 Student Dashboard →';
           btn.classList.add('btn-student');
         } else {
           badge.textContent = '👨‍🏫 Lecturer';
-          badge.className = 'badge badge-upcoming'; 
-          btn.textContent = '👨‍🏫 Lecturer Dashboard →';
+          badge.className   = 'badge badge-upcoming';
+          btn.textContent   = '👨‍🏫 Lecturer Dashboard →';
           btn.classList.add('btn-lecturer');
         }
 

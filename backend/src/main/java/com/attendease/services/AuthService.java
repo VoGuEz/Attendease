@@ -30,7 +30,8 @@ public class AuthService {
         userRepository.save(user);
         
         User saved = userRepository.findByEmail(email);
-        // PASSING ID AND ROLE TO TOKEN
+        if (saved == null) throw new RuntimeException("Failed to retrieve user after saving");
+
         String token = tokenProvider.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
         Map<String, Object> result = new HashMap<>();
@@ -45,7 +46,6 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
-        // PASSING ID AND ROLE TO TOKEN
         String token = tokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
         
         Map<String, Object> result = new HashMap<>();
@@ -56,6 +56,7 @@ public class AuthService {
 
     public Map<String, Object> requestPasswordReset(String email) {
         User user = userRepository.findByEmail(email);
+        // We always return the same message for security
         if (user != null) {
             String resetToken = UUID.randomUUID().toString().substring(0, 8);
             resetTokens.put(resetToken, email);

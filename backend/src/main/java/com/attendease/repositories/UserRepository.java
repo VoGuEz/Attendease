@@ -3,6 +3,8 @@ package com.attendease.repositories;
 import com.attendease.models.User;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserRepository {
     private final Connection conn;
@@ -34,14 +36,7 @@ public class UserRepository {
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                User user = new User(
-                    rs.getString("email"),
-                    rs.getString("password_hash"),
-                    rs.getString("full_name"),
-                    rs.getString("role")
-                );
-                user.setId(rs.getInt("id"));
-                return user;
+                return mapRow(rs);
             }
             return null;
         } catch (SQLException e) {
@@ -57,18 +52,64 @@ public class UserRepository {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                User user = new User(
-                    rs.getString("email"),
-                    rs.getString("password_hash"),
-                    rs.getString("full_name"),
-                    rs.getString("role")
-                );
-                user.setId(rs.getInt("id"));
-                return user;
+                return mapRow(rs);
             }
             return null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public boolean updateFullName(int id, String fullName) {
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE users SET full_name = ? WHERE id = ?"
+            );
+            stmt.setString(1, fullName);
+            stmt.setInt(2, id);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean updatePassword(int id, String passwordHash) {
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE users SET password_hash = ? WHERE id = ?"
+            );
+            stmt.setString(1, passwordHash);
+            stmt.setInt(2, id);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<User> findAllStudents() {
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "SELECT * FROM users WHERE role = 'student'"
+            );
+            ResultSet rs = stmt.executeQuery();
+            List<User> students = new ArrayList<>();
+            while (rs.next()) {
+                students.add(mapRow(rs));
+            }
+            return students;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private User mapRow(ResultSet rs) throws SQLException {
+        User user = new User(
+            rs.getString("email"),
+            rs.getString("password_hash"),
+            rs.getString("full_name"),
+            rs.getString("role")
+        );
+        user.setId(rs.getInt("id"));
+        return user;
     }
 }

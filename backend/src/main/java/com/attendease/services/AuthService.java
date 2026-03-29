@@ -7,18 +7,17 @@ import com.attendease.utils.PasswordUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthService {
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
     private final PasswordUtil passwordUtil;
 
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
 
     public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordUtil passwordUtil) {
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
         this.passwordUtil = passwordUtil;
     }
 
@@ -36,11 +35,13 @@ public class AuthService {
         User user = new User(email, hashed, fullName, role);
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user);
+        // Fetch saved user to get generated ID
+        User saved = userRepository.findByEmail(email);
+        String token = JwtUtil.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
-        result.put("user", userToMap(user));
+        result.put("user", userToMap(saved));
         return result;
     }
 
@@ -49,11 +50,11 @@ public class AuthService {
         if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is required");
 
         User user = userRepository.findByEmail(email);
-        if (user == null || !passwordUtil.verifyPassword(password, user.getPassword())) {
+        if (user == null || !passwordUtil.verifyPassword(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
-        String token = jwtUtil.generateToken(user);
+        String token = JwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
 
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
@@ -69,9 +70,8 @@ public class AuthService {
             return Map.of("message", "If that email exists, a reset code has been sent.");
         }
 
-        String resetToken = java.util.UUID.randomUUID().toString();
+        String resetToken = UUID.randomUUID().toString();
         resetTokens.put(resetToken, email);
-
         System.out.println("[AuthService] Password reset token for " + email + ": " + resetToken);
 
         return Map.of("message", "If that email exists, a reset code has been sent.");
@@ -91,7 +91,6 @@ public class AuthService {
         userRepository.updatePassword(user.getId(), hashed);
 
         resetTokens.remove(resetToken);
-
         return Map.of("message", "Password reset successfully");
     }
 

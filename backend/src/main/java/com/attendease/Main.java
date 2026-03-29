@@ -6,6 +6,8 @@ import com.attendease.handlers.CourseHandler;
 import com.attendease.handlers.SessionHandler;
 import com.attendease.repositories.UserRepository;
 import com.attendease.services.AuthService;
+import com.attendease.services.EmailService;
+import com.attendease.services.JwtTokenProvider; 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -18,13 +20,12 @@ import java.util.concurrent.Executors;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        // 1. Get the Port from Railway (Default to 8080 if local)
+        // 1. Get the Port from Railway
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
-        // 2. Safely get the Database URL
+        // 2. Database Connection setup
         String dbUrl = System.getenv("DATABASE_URL");
         
-        // CRITICAL FIX: Prevent the null crash and handle the jdbc: prefix
         if (dbUrl == null || dbUrl.isEmpty()) {
             System.err.println("FATAL ERROR: DATABASE_URL is not set in Railway variables!");
             System.exit(1); 
@@ -34,7 +35,7 @@ public class Main {
             dbUrl = "jdbc:" + dbUrl;
         }
 
-        // 3. Load the MySQL Driver (Prevents 'No suitable driver' error)
+        // 3. Load MySQL Driver
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
@@ -46,17 +47,28 @@ public class Main {
         Connection conn = DriverManager.getConnection(dbUrl);
         System.out.println("Successfully connected to the database!");
 
-        // 5. Initialize Repositories and Services
+        // 5. Initialize Services
         UserRepository userRepository = new UserRepository(conn);
-        // Assuming AuthService needs the repo; passing null for other params as per your original code
-        AuthService authService = new AuthService(userRepository, null, null);
+        
+        // Initialize Email Service for password resets
+        EmailService emailService = new EmailService(); 
+        
+        // Initialize the modern JWT Token Provider for logins
+        JwtTokenProvider tokenProvider = new JwtTokenProvider();
+        
+        // 6. Initialize AuthService with all dependencies
+        // Parameter 1: User Database
+        // Parameter 2: Email engine
+        // Parameter 3: Security Token engine (replaces 'null')
+        AuthService authService = new AuthService(userRepository, emailService, tokenProvider);
 
+        // 7. Initialize Handlers
         AuthHandler authHandler = new AuthHandler(authService, userRepository);
         CourseHandler courseHandler = new CourseHandler();
         SessionHandler sessionHandler = new SessionHandler();
         AttendanceHandler attendanceHandler = new AttendanceHandler();
 
-        // 6. Start the Server
+        // 8. Start the Server
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         // --- AUTH ROUTES ---
@@ -118,6 +130,7 @@ public class Main {
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
         System.out.println("AttendEase server started on port " + port);
+        System.out.println("Systems Check: DB Connected, Email Active, JWT Active.");
     }
 
     static void addCorsHeaders(HttpExchange exchange) {

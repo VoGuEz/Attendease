@@ -53,12 +53,16 @@ public class AttendanceHandler {
             if (method.equals("GET") && path.matches("/api/attendance/session/\\d+")) {
                 if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Forbidden"); return; }
                 int sessionId = Integer.parseInt(path.substring("/api/attendance/session/".length()));
-                List<Attendance> list = attendanceService.getAttendanceForSession(sessionId);
+                // userId here is the authenticated lecturer — ownership is verified inside the service
+                List<Attendance> list = attendanceService.getAttendanceForSession(sessionId, userId);
                 ResponseUtil.sendResponse(exchange, 200, list);
                 return;
             }
 
             ResponseUtil.sendError(exchange, 404, "Not found");
+        } catch (SecurityException e) {
+            // Lecturer tried to access a session that belongs to another lecturer
+            ResponseUtil.sendError(exchange, 403, e.getMessage());
         } catch (IllegalArgumentException e) {
             ResponseUtil.sendError(exchange, 400, e.getMessage());
         } catch (Exception e) {

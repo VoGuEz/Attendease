@@ -118,6 +118,26 @@ public class SessionRepository {
         }
     }
 
+    /**
+     * Checks whether a session belongs to a specific lecturer.
+     * The ownership chain is: sessions → courses → courses.lecturer_id
+     */
+    public boolean isOwnedByLecturer(int sessionId, int lecturerId) throws SQLException {
+        String sql = """
+            SELECT 1
+            FROM sessions s
+            JOIN courses c ON s.course_id = c.id
+            WHERE s.id = ? AND c.lecturer_id = ?
+            """;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            stmt.setInt(2, lecturerId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
     private Session mapRow(ResultSet rs) throws SQLException {
         Session session = new Session();
         session.setId(rs.getInt("id"));

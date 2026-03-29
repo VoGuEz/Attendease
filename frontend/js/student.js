@@ -341,15 +341,15 @@ function openJoinModal(sessionId, btn) {
   const codeInput = document.getElementById('join-session-code');
   const locationStatus = document.getElementById('join-location-status');
 
-  // Reset to step 1
+  // Reset FIRST, then set values so reset doesn't wipe them
+  form?.reset();
   if (codeStep) codeStep.style.display = '';
   if (detailsStep) detailsStep.style.display = 'none';
   if (codeInput) codeInput.value = '';
   if (codeMsg) { codeMsg.style.display = 'none'; codeMsg.textContent = ''; }
   if (msg) { msg.style.display = 'none'; msg.textContent = ''; }
   if (locationStatus) locationStatus.textContent = 'Location not captured yet.';
-  if (sessionInput) sessionInput.value = String(sessionId);
-  form?.reset();
+  if (sessionInput) sessionInput.value = String(sessionId); // ✅ set AFTER reset
 
   const fullNameInput = document.getElementById('join-full-name');
   if (fullNameInput) fullNameInput.value = currentUser?.fullName || '';

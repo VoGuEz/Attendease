@@ -1,92 +1,75 @@
-// ===== Edit/Delete Course (Continued) =====
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Security Check - If this fails, it redirects to index.html
+    const user = requireRole('LECTURER');
+    if (!user) return;
 
-async function confirmDeleteCourse(courseId, courseName) {
-  showConfirmDialog(
-    'Delete Course?',
-    `Are you sure you want to delete "${courseName}"? This will also delete all its sessions and attendance records.`,
-    async () => {
-      try {
-        await apiRequest(`/courses/${courseId}`, 'DELETE');
-        showToast('Course deleted successfully!', 'success');
-        await loadCourses();
-        updateStats();
-        // If we were viewing sessions for this course, go back to overview
-        if (activeSection === 'sessions') showSection('overview');
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+    // 2. Update UI with User Info
+    document.getElementById('user-name').textContent = user.name || 'Lecturer';
+    document.getElementById('sidebar-user-name').textContent = user.name || 'Lecturer';
+    const avatar = (user.name || 'L').charAt(0).toUpperCase();
+    document.getElementById('user-avatar').textContent = avatar;
+    document.getElementById('sidebar-avatar').textContent = avatar;
+
+    // 3. Initial Data Load
+    try {
+        await Promise.all([
+            loadStats(),
+            loadActiveSessions(),
+            loadCourses()
+        ]);
+    } catch (err) {
+        console.error("Initialization error:", err);
     }
-  );
-}
 
-// ===== Edit/Delete Session =====
+    // 4. Handle Course Creation
+    const createCourseForm = document.getElementById('form-create-course');
+    if (createCourseForm) {
+        createCourseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('course-name').value;
+            const code = document.getElementById('course-code').value;
+            const description = document.getElementById('course-desc')?.value || '';
 
-function openEditSession(sessionId, date, start, end) {
-  document.getElementById('edit-session-id').value = sessionId;
-  document.getElementById('edit-session-date').value = date;
-  document.getElementById('edit-session-start').value = start;
-  document.getElementById('edit-session-end').value = end;
-  openModal('modal-edit-session');
-}
-
-async function handleEditSession(e) {
-  e.preventDefault();
-  const btn = e.target.querySelector('button[type="submit"]');
-  const sessionId = document.getElementById('edit-session-id').value;
-  const data = {
-    sessionDate: document.getElementById('edit-session-date').value,
-    startTime: document.getElementById('edit-session-start').value,
-    endTime: document.getElementById('edit-session-end').value
-  };
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  try {
-    await apiRequest(`/sessions/${sessionId}`, 'PUT', data);
-    closeModal('modal-edit-session');
-    showToast('Session updated successfully!', 'success');
-    await loadAll();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Save Changes';
-  }
-}
-
-async function confirmDeleteSession(sessionId) {
-  showConfirmDialog(
-    'Delete Session?',
-    'Are you sure you want to delete this session? Attendance data for this session will be lost.',
-    async () => {
-      try {
-        await apiRequest(`/sessions/${sessionId}`, 'DELETE');
-        showToast('Session deleted successfully!', 'success');
-        await loadAll();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
+            try {
+                await apiRequest('/courses', 'POST', { name, code, description });
+                alert('Course created successfully!');
+                closeModal('modal-create-course');
+                loadCourses(); // Refresh list
+            } catch (err) {
+                alert(err.message);
+            }
+        });
     }
-  );
+});
+
+async function loadStats() {
+    // Basic stats logic
+    const courses = await apiRequest('/courses');
+    document.getElementById('stat-courses').textContent = courses.length;
 }
 
-// ===== Helper: Search/Filters =====
-function filterCards(containerId, query) {
-  const container = document.getElementById(containerId);
-  const cards = container.querySelectorAll('.item-card');
-  const q = query.toLowerCase();
-  cards.forEach(card => {
-    const text = card.innerText.toLowerCase();
-    card.style.display = text.includes(q) ? '' : 'none';
-  });
+async function loadCourses() {
+    const list = document.getElementById('courses-list');
+    try {
+        const courses = await apiRequest('/courses');
+        if (courses.length === 0) {
+            list.innerHTML = '<p class="empty">No courses created yet.</p>';
+            return;
+        }
+        list.innerHTML = courses.map(c => `
+            <div class="card course-card">
+                <h4>${c.name}</h4>
+                <p class="text-muted">${c.code}</p>
+                <button class="btn btn-sm" onclick="window.location.href='course-details.html?id=${c.id}'">View Details</button>
+            </div>
+        `).join('');
+    } catch (err) {
+        list.innerHTML = '<p class="error">Failed to load courses.</p>';
+    }
 }
 
-function filterTableRows(containerId, query) {
-  const container = document.getElementById(containerId);
-  const rows = container.querySelectorAll('tbody tr');
-  const q = query.toLowerCase();
-  rows.forEach(row => {
-    const text = row.innerText.toLowerCase();
-    row.style.display = text.includes(q) ? '' : 'none';
-  });
+async function loadActiveSessions() {
+    const list = document.getElementById('active-sessions-list');
+    // Implementation for active sessions...
+    list.innerHTML = '<p class="empty-state">No live sessions currently.</p>';
 }

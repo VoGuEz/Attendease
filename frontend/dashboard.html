@@ -6,6 +6,53 @@
   <title>Dashboard – AttendEase</title>
   <link rel="stylesheet" href="css/styles.css?v=5" />
   <link rel="icon" type="image/png" href="images/logo.png" />
+  <style>
+    /* Ensure the welcome screen is centered and looks like the screenshot */
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: var(--bg, #121212);
+    }
+
+    .welcome-card {
+      background: var(--card-bg, #1e1e1e);
+      padding: 40px;
+      border-radius: 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border, #333);
+    }
+
+    .welcome-logo-img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      object-fit: contain;
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    #go-dashboard-btn {
+      justify-content: center;
+      padding: 14px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    /* Role-specific button colors if desired */
+    .btn-student { background-color: #008c9e !important; }
+    .btn-lecturer { background-color: #2938b8 !important; }
+  </style>
 </head>
 <body>
 
@@ -14,15 +61,15 @@
   <div class="dashboard-welcome">
     <div class="welcome-card">
       <img src="images/logo.png" alt="AttendEase Logo" class="welcome-logo-img" />
-      <h1>AttendEase</h1>
-      <p id="welcome-msg">Welcome back!</p>
+      <h1 style="margin-bottom: 8px;">AttendEase</h1>
+      <p id="welcome-msg" style="color: var(--text-secondary); margin-bottom: 20px;">Welcome back!</p>
 
       <div style="margin-bottom: 24px;">
         <span class="badge" id="role-badge" style="font-size: 14px; padding: 8px 20px;"></span>
       </div>
 
       <div class="welcome-actions">
-        <button class="btn" id="go-dashboard-btn" style="display:none">Go to Dashboard →</button>
+        <button class="btn" id="go-dashboard-btn" style="display:none"></button>
         <button class="btn btn-outline btn-danger" onclick="logout()">Logout</button>
       </div>
     </div>
@@ -31,25 +78,39 @@
   <script src="js/api.js?v=2"></script>
   <script src="js/themes.js?v=3"></script>
   <script>
-    renderThemeSwitcher('theme-switcher-container');
+    // Ensure theme switcher is rendered
+    if (typeof renderThemeSwitcher === 'function') {
+      renderThemeSwitcher('theme-switcher-container');
+    }
 
-    const user = requireAuth();
+    // requireAuth() comes from your api.js
+    const user = requireAuth(); 
+    
     if (user) {
-      document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName}!`;
+      // Update Name
+      document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
 
+      // Update Badge and Button
       const badge = document.getElementById('role-badge');
+      const btn = document.getElementById('go-dashboard-btn');
+      
+      btn.style.display = 'flex';
+
       if (user.role === 'student') {
         badge.textContent = '🎓 Student';
-        badge.classList.add('badge-active');
+        badge.className = 'badge badge-active'; // Using your CSS classes
+        btn.textContent = '🎓 Student Dashboard →';
+        btn.classList.add('btn-student');
       } else {
         badge.textContent = '👨‍🏫 Lecturer';
-        badge.classList.add('badge-upcoming');
+        badge.className = 'badge badge-upcoming'; // Using your CSS classes
+        btn.textContent = '👨‍🏫 Lecturer Dashboard →';
+        btn.classList.add('btn-lecturer');
       }
 
-      const btn = document.getElementById('go-dashboard-btn');
-      btn.style.display = 'flex';
-      btn.textContent = user.role === 'student' ? '🎓 Student Dashboard →' : '👨‍🏫 Lecturer Dashboard →';
+      // Handle Redirection
       btn.addEventListener('click', () => {
+        // Redirects to specific files based on role
         window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
       });
     }

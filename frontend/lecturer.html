@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lecturer Dashboard – AttendEase</title>
-  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="stylesheet" href="css/styles.css?v=6" />
   <link rel="icon" type="image/png" href="images/logo.png" />
 </head>
 <body>
@@ -13,11 +13,11 @@
     <button class="hamburger-menu" id="hamburger-btn">
       <span></span><span></span><span></span>
     </button>
-    <a href="dashboard.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
+    <a href="lecturer.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
     <div class="navbar-right">
       <div class="user-badge">
-        <span class="avatar-badge" id="user-avatar"></span>
-        <span class="user-badge-name" id="user-name">...</span>
+        <span class="avatar-badge" id="user-avatar">L</span>
+        <span class="user-badge-name" id="user-name">Lecturer</span>
       </div>
       <div id="theme-switcher-container"></div>
       <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
@@ -29,8 +29,8 @@
     
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-user-info">
-        <span class="sidebar-user-avatar" id="sidebar-avatar"></span>
-        <span class="sidebar-user-name" id="sidebar-user-name">...</span>
+        <span class="sidebar-user-avatar" id="sidebar-avatar">L</span>
+        <span class="sidebar-user-name" id="sidebar-user-name">Lecturer</span>
       </div>
       <ul class="sidebar-nav">
         <li class="active"><a href="#" data-section="overview">🏠 Dashboard</a></li>
@@ -56,13 +56,13 @@
           </div>
         </div>
 
-        <div id="live-sessions-anchor"></div>
+        <div id="live-sessions-anchor" style="padding-top: 20px;"></div>
         <div class="section-header">
           <h3>Live Sessions</h3>
           <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
         </div>
         <div class="items-grid" id="active-sessions-list">
-          <div class="loading-overlay"><span class="spinner"></span></div>
+          <p class="empty-state">No live sessions currently.</p>
         </div>
       </div>
 
@@ -73,15 +73,6 @@
         </div>
         <div class="items-grid" id="courses-list">
           <div class="loading-overlay"><span class="spinner"></span></div>
-        </div>
-      </div>
-
-      <div id="section-settings" class="section">
-        <div class="section-header"><h2>Settings</h2></div>
-        <div class="card" style="max-width: 480px;">
-          <h3>Account</h3>
-          <p>Signed in as: <strong id="settings-email">...</strong></p>
-          <button class="btn btn-danger btn-sm" onclick="logout()" style="margin-top:10px;">Sign Out</button>
         </div>
       </div>
     </main>
@@ -96,15 +87,11 @@
       <form id="form-create-course">
         <div class="form-group">
           <label>Course Name *</label>
-          <input type="text" id="course-name" placeholder="e.g. Data Structures" required />
+          <input type="text" id="course-name" required />
         </div>
         <div class="form-group">
           <label>Course Code *</label>
-          <input type="text" id="course-code" placeholder="e.g. CS202" required />
-        </div>
-        <div class="form-group">
-          <label>Description</label>
-          <textarea id="course-desc" placeholder="Brief details..."></textarea>
+          <input type="text" id="course-code" required />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-course')">Cancel</button>
@@ -114,21 +101,13 @@
     </div>
   </div>
 
-  <script src="js/api.js?v=3"></script>
-  <script src="js/themes.js?v=3"></script>
-  <script src="js/lecturer.js?v=5"></script>
+  <script src="js/api.js?v=4"></script>
+  <script src="js/themes.js?v=4"></script>
+  <script src="js/lecturer.js?v=6"></script>
   
   <script>
-    // Simple helper to open/close modals from HTML
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    
-    // Close modal if clicking outside the box
-    window.onclick = function(event) {
-      if (event.target.classList.contains('modal-overlay')) {
-        event.target.classList.remove('open');
-      }
-    }
   </script>
 </body>
 </html>

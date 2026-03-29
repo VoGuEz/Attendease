@@ -3,13 +3,16 @@ const API_BASE =
     ? 'http://localhost:8080/api'
     : 'https://attendease-production-e306.up.railway.app/api';
 
-function getToken() {
-  return localStorage.getItem('token');
-}
+function getToken() { return localStorage.getItem('token'); }
 
 function getUser() {
   const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  try {
+    return user ? JSON.parse(user) : null;
+  } catch (e) {
+    console.error("User data corrupted in LocalStorage");
+    return null;
+  }
 }
 
 function setAuth(token, user) {
@@ -33,25 +36,22 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
     
-    // Check for 401 (Unauthorized) - kicks user out if token is expired
     if (response.status === 401) {
+      console.warn("Unauthorized request. Redirecting to login...");
       clearAuth();
       window.location.href = 'index.html';
-      throw new Error('Session expired. Please log in again.');
+      return;
     }
 
     const data = await response.json();
 
     if (!response.ok) {
-      // Broken token fix: Clears session if backend rejects the signature
       if (data.message && (data.message.includes('JWT') || data.message.includes('signature'))) {
-        console.warn("Invalid JWT detected. Clearing session...");
         clearAuth();
         window.location.href = 'index.html';
       }
       throw new Error(data.message || 'Request failed');
     }
-    
     return data;
   } catch (error) {
     console.error("API Request Error:", error);
@@ -59,24 +59,28 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   }
 }
 
-function requireAuth() {
+function requireRole(expectedRole) {
   const token = getToken();
   const user = getUser();
-  if (!token || !user) {
-    window.location.href = 'index.html';
-    return null;
-  }
-  return user;
-}
 
-function requireRole(role) {
-  const user = requireAuth();
-  if (!user) return null;
-  // Case-insensitive role check
-  if (user.role.toLowerCase() !== role.toLowerCase()) {
+  console.log("Checking Auth Status...");
+  console.log("Token exists:", !!token);
+  console.log("User Object:", user);
+
+  if (!token || !user) {
+    console.warn("No valid session found. Redirecting...");
     window.location.href = 'index.html';
     return null;
   }
+
+  // Check role strictly but handle case-sensitivity
+  const userRole = user.role ? user.role.toUpperCase() : "";
+  if (userRole !== expectedRole.toUpperCase()) {
+    console.error(`Role Mismatch! Expected: ${expectedRole}, Got: ${userRole}`);
+    window.location.href = 'index.html';
+    return null;
+  }
+
   return user;
 }
 

@@ -30,33 +30,20 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
 
-  try {
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
-    
-    // Check for 401 (Unauthorized)
-    if (response.status === 401) {
-      clearAuth();
-      window.location.href = 'index.html';
-      throw new Error('Session expired. Please log in again.');
-    }
+  const response = await fetch(`${API_BASE}${endpoint}`, options);
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      // If the error message mentions JWT or Signature, it's a broken token.
-      if (data.message && (data.message.includes('JWT') || data.message.includes('signature'))) {
-        console.warn("Invalid JWT detected. Clearing session...");
-        clearAuth();
-        window.location.href = 'index.html';
-      }
-      throw new Error(data.message || 'Request failed');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("API Request Error:", error);
-    throw error;
+  if (response.status === 401) {
+    clearAuth();
+    window.location.href = 'index.html';
+    throw new Error('Session expired. Please log in again.');
   }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Request failed');
+  }
+  return data;
 }
 
 function requireAuth() {
@@ -72,8 +59,8 @@ function requireAuth() {
 function requireRole(role) {
   const user = requireAuth();
   if (!user) return null;
-  if (user.role.toLowerCase() !== role.toLowerCase()) {
-    window.location.href = 'index.html';
+  if (user.role !== role) {
+    window.location.href = 'dashboard.html';
     return null;
   }
   return user;

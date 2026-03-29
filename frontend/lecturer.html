@@ -1,113 +1,371 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lecturer Dashboard – AttendEase</title>
-  <link rel="stylesheet" href="css/styles.css?v=6" />
-  <link rel="icon" type="image/png" href="images/logo.png" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lecturer Dashboard – AttendEase</title>
+  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
 </head>
 <body>
 
-  <nav class="navbar">
-    <button class="hamburger-menu" id="hamburger-btn">
-      <span></span><span></span><span></span>
-    </button>
-    <a href="lecturer.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
-    <div class="navbar-right">
-      <div class="user-badge">
-        <span class="avatar-badge" id="user-avatar">L</span>
-        <span class="user-badge-name" id="user-name">Lecturer</span>
-      </div>
-      <div id="theme-switcher-container"></div>
-      <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
-    </div>
-  </nav>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <button class="hamburger-menu" id="hamburger-btn">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <a href="dashboard.html" class="logo"><img src="images/logo.png" alt="AttendEase" class="navbar-logo-img" /> AttendEase</a>
+    <div class="navbar-right">
+      <div class="user-badge">
+        <span class="avatar-badge" id="user-avatar"></span>
+        <span class="user-badge-name" id="user-name">...</span>
+      </div>
+      <div id="theme-switcher-container"></div>
+      <button class="btn btn-sm btn-outline" id="logout-btn">Logout</button>
+    </div>
+  </nav>
 
-  <div class="dashboard-layout">
-    <div class="mobile-overlay" id="mobile-overlay"></div>
-    
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-user-info">
-        <span class="sidebar-user-avatar" id="sidebar-avatar">L</span>
-        <span class="sidebar-user-name" id="sidebar-user-name">Lecturer</span>
-      </div>
-      <ul class="sidebar-nav">
-        <li class="active"><a href="#" data-section="overview">🏠 Dashboard</a></li>
-        <li><a href="#" data-scroll="live-sessions-anchor">📡 Live Sessions</a></li>
-        <li><a href="#" data-section="courses">📘 My Courses</a></li>
-        <li><a href="#" data-section="students">👥 All Students</a></li>
-        <li><a href="#" data-section="settings">⚙️ Settings</a></li>
-      </ul>
-    </aside>
+  <div class="dashboard-layout">
+    <!-- Mobile overlay -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-user-info" id="sidebar-user-info">
+        <span class="sidebar-user-avatar" id="sidebar-avatar"></span>
+        <span class="sidebar-user-name" id="sidebar-user-name">...</span>
+      </div>
+      <ul class="sidebar-nav">
+        <li class="active">
+          <a href="#" data-section="overview"><span class="sidebar-icon">🏠</span> Dashboard</a>
+        </li>
+        <li>
+          <a href="#" data-scroll="live-sessions-anchor"><span class="sidebar-icon">📡</span> Live Sessions</a>
+        </li>
+        <li>
+          <a href="#" data-scroll="upcoming-sessions-anchor"><span class="sidebar-icon">🕐</span> Upcoming & Recent</a>
+        </li>
+        <li>
+          <a href="#" data-section="courses"><span class="sidebar-icon">📘</span> My Courses</a>
+        </li>
+        <li>
+          <a href="#" data-section="sessions"><span class="sidebar-icon">📅</span> All Sessions <span class="notification-dot" id="notif-dot-sessions" style="display:none"></span></a>
+        </li>
+        <li>
+          <a href="#" data-section="students"><span class="sidebar-icon">👥</span> All Students</a>
+        </li>
+        <li>
+          <a href="#" data-section="settings"><span class="sidebar-icon">⚙️</span> Settings</a>
+        </li>
+      </ul>
+    </aside>
 
-    <main class="main-content">
-      <div class="breadcrumb" id="breadcrumb">Dashboard / Overview</div>
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="breadcrumb" id="breadcrumb"></div>
 
-      <div id="section-overview" class="section active">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Courses</div>
-            <div class="stat-value" id="stat-courses">0</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Active Sessions</div>
-            <div class="stat-value" id="stat-active-sessions">0</div>
-          </div>
-        </div>
+      <!-- OVERVIEW SECTION -->
+      <div id="section-overview" class="section active">
+        <div class="section-header">
+          <h2>Dashboard</h2>
+        </div>
 
-        <div id="live-sessions-anchor" style="padding-top: 20px;"></div>
-        <div class="section-header">
-          <h3>Live Sessions</h3>
-          <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
-        </div>
-        <div class="items-grid" id="active-sessions-list">
-          <p class="empty-state">No live sessions currently.</p>
-        </div>
-      </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Courses</div>
+            <div class="stat-value" id="stat-courses">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-value" id="stat-sessions">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Sessions</div>
+            <div class="stat-value" id="stat-active-sessions">–</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value" id="stat-students">–</div>
+          </div>
+        </div>
 
-      <div id="section-courses" class="section">
-        <div class="section-header">
-          <h2>My Courses</h2>
-          <button class="btn" onclick="openModal('modal-create-course')">+ New Course</button>
-        </div>
-        <div class="items-grid" id="courses-list">
-          <div class="loading-overlay"><span class="spinner"></span></div>
-        </div>
-      </div>
-    </main>
-  </div>
+        <!-- Active sessions panel -->
+        <div id="live-sessions-anchor"></div>
+        <div class="section-header" style="margin-top: 8px;">
+          <h3>Live Sessions</h3>
+          <button class="btn btn-sm btn-outline" onclick="loadActiveSessions()">🔄 Refresh</button>
+        </div>
+        <div class="items-grid" id="active-sessions-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
 
-  <div class="modal-overlay" id="modal-create-course">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Create New Course</h3>
-        <button class="modal-close" onclick="closeModal('modal-create-course')">✕</button>
-      </div>
-      <form id="form-create-course">
-        <div class="form-group">
-          <label>Course Name *</label>
-          <input type="text" id="course-name" required />
-        </div>
-        <div class="form-group">
-          <label>Course Code *</label>
-          <input type="text" id="course-code" required />
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-course')">Cancel</button>
-          <button type="submit" class="btn">Create Course</button>
-        </div>
-      </form>
-    </div>
-  </div>
+        <div id="upcoming-sessions-anchor"></div>
+        <div class="section-header" style="margin-top: 8px;">
+          <h3>Upcoming & Recent Sessions</h3>
+          <a href="#" class="btn btn-sm btn-outline" data-section="sessions">Open sessions tab</a>
+        </div>
+        <div class="items-grid" id="overview-sessions-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
 
-  <script src="js/api.js?v=4"></script>
-  <script src="js/themes.js?v=4"></script>
-  <script src="js/lecturer.js?v=6"></script>
-  
-  <script>
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-  </script>
+      <!-- COURSES SECTION -->
+      <div id="section-courses" class="section">
+        <div class="section-header">
+          <h2>My Courses</h2>
+          <button class="btn" id="create-course-btn">+ New Course</button>
+        </div>
+        <input type="text" id="search-courses" placeholder="Search courses..." style="margin-bottom:16px; max-width:360px;" />
+        <div class="items-grid" id="courses-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- SESSIONS SECTION -->
+      <div id="section-sessions" class="section">
+        <div class="section-header">
+          <h2>All Sessions</h2>
+        </div>
+        <input type="text" id="search-sessions" placeholder="Search sessions..." style="margin-bottom:16px; max-width:360px;" />
+        <div id="sessions-detail">
+          <div class="empty-state">
+            <div class="empty-icon">📅</div>
+            <h3>Loading sessions...</h3>
+            <p>Please wait while we fetch your sessions.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDENTS SECTION -->
+      <div id="section-students" class="section">
+        <div class="section-header">
+          <h2>All Students</h2>
+        </div>
+        <input type="text" id="search-students" placeholder="Search students..." style="margin-bottom:16px; max-width:360px;" />
+        <div id="students-list">
+          <div class="loading-overlay"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS SECTION -->
+      <div id="section-settings" class="section">
+        <div class="section-header">
+          <h2>Settings</h2>
+        </div>
+        <div class="card" style="max-width: 480px;">
+          <h3 style="margin-bottom: 16px;">Theme</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose your preferred color theme.</p>
+          <div id="settings-theme-switcher"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Wallpaper</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Choose a floating background wallpaper.</p>
+          <div id="settings-wallpaper-picker" class="wallpaper-picker"></div>
+        </div>
+        <div class="card" style="max-width: 480px; margin-top: 16px;">
+          <h3 style="margin-bottom: 16px;">Account</h3>
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">Signed in as <strong id="settings-email"></strong></p>
+          <div style="margin-bottom: 16px;">
+            <label for="settings-name-input" style="display:block; font-size:14px; margin-bottom:6px; color:var(--text-secondary);">Display Name</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="settings-name-input" placeholder="Your full name"
+                style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text); font-size:14px;" />
+              <button class="btn btn-sm" onclick="saveName()">Save</button>
+            </div>
+            <p id="settings-name-msg" style="font-size:13px; margin-top:6px; display:none;"></p>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal: Create Course -->
+  <div class="modal-overlay" id="modal-create-course">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create New Course</h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-create-course">
+        <div class="form-group">
+          <label for="course-name">Course Name *</label>
+          <input type="text" id="course-name" placeholder="e.g. Introduction to Programming" required />
+        </div>
+        <div class="form-group">
+          <label for="course-code">Course Code *</label>
+          <input type="text" id="course-code" placeholder="e.g. CS101" required />
+        </div>
+        <div class="form-group">
+          <label for="course-desc">Description</label>
+          <textarea id="course-desc" placeholder="Brief course description..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close-btn" onclick="closeModal('modal-create-course')">Cancel</button>
+          <button type="submit" class="btn">Create Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Create Session -->
+  <div class="modal-overlay" id="modal-create-session">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Create Session – <span id="session-course-name-label"></span></h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-create-session">
+        <input type="hidden" id="session-course-id" />
+        <div class="form-group">
+          <label for="session-date">Session Date *</label>
+          <input type="date" id="session-date" required />
+        </div>
+        <div class="form-group">
+          <label for="session-start">Start Time *</label>
+          <input type="time" id="session-start" required />
+        </div>
+        <div class="form-group">
+          <label for="session-end">End Time *</label>
+          <input type="time" id="session-end" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-create-session')">Cancel</button>
+          <button type="submit" class="btn">Create Session</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Course -->
+  <div class="modal-overlay" id="modal-edit-course">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Course</h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-edit-course">
+        <input type="hidden" id="edit-course-id" />
+        <div class="form-group">
+          <label for="edit-course-name">Course Name *</label>
+          <input type="text" id="edit-course-name" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-course-code">Course Code *</label>
+          <input type="text" id="edit-course-code" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-course-desc">Description</label>
+          <textarea id="edit-course-desc"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit-course')">Cancel</button>
+          <button type="submit" class="btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Session -->
+  <div class="modal-overlay" id="modal-edit-session">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Edit Session</h3>
+        <button class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="form-edit-session">
+        <input type="hidden" id="edit-session-id" />
+        <div class="form-group">
+          <label for="edit-session-date">Session Date *</label>
+          <input type="date" id="edit-session-date" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-session-start">Start Time *</label>
+          <input type="time" id="edit-session-start" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-session-end">End Time *</label>
+          <input type="time" id="edit-session-end" required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit-session')">Cancel</button>
+          <button type="submit" class="btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js?v=2"></script>
+  <script src="js/themes.js?v=3"></script>
+  <script src="js/lecturer.js?v=4"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = getUser();
+      if (user) {
+        const emailEl = document.getElementById('settings-email');
+        if (emailEl) emailEl.textContent = user.email;
+        const nameInput = document.getElementById('settings-name-input');
+        if (nameInput) nameInput.value = user.fullName || '';
+      }
+
+      const settingsContainer = document.getElementById('settings-theme-switcher');
+      if (settingsContainer) {
+        settingsContainer.innerHTML = `
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            ${THEMES.map(t => `
+              <button onclick="applyTheme('${t.id}')" title="${t.label}"
+                style="width:40px;height:40px;border-radius:50%;border:3px solid transparent;cursor:pointer;
+                       background:linear-gradient(135deg,${t.bg} 50%,${t.color} 50%);
+                       transition:transform 0.2s,border-color 0.2s;"
+                onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Wallpaper picker for settings
+      renderWallpaperPicker('settings-wallpaper-picker');
+
+      // Close modals on overlay click
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) overlay.classList.remove('open');
+        });
+      });
+    });
+
+    async function saveName() {
+      const input = document.getElementById('settings-name-input');
+      const msg = document.getElementById('settings-name-msg');
+      const fullName = input ? input.value.trim() : '';
+      if (!fullName) {
+        msg.textContent = 'Name cannot be empty.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
+        return;
+      }
+      try {
+        const updated = await apiRequest('/auth/update-name', 'PUT', { fullName });
+        const user = getUser();
+        if (user) {
+          user.fullName = updated.fullName;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+        const nameEl = document.getElementById('user-name');
+        if (nameEl) nameEl.textContent = updated.fullName;
+        msg.textContent = 'Name updated successfully!';
+        msg.style.color = 'var(--success, #27ae60)';
+        msg.style.display = 'block';
+      } catch (e) {
+        msg.textContent = e.message || 'Failed to update name.';
+        msg.style.color = 'var(--danger, #e74c3c)';
+        msg.style.display = 'block';
+      }
+    }
+  </script>
 </body>
 </html>

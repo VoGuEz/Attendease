@@ -12,13 +12,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthService {
     private final UserRepository userRepository;
-    private final PasswordUtil passwordUtil;
-
     private final Map<String, String> resetTokens = new ConcurrentHashMap<>();
 
     public AuthService(UserRepository userRepository, JwtUtil jwtUtil, PasswordUtil passwordUtil) {
         this.userRepository = userRepository;
-        this.passwordUtil = passwordUtil;
     }
 
     public Map<String, Object> register(String email, String password, String fullName, String role) {
@@ -31,11 +28,10 @@ public class AuthService {
             throw new IllegalArgumentException("Email already registered");
         }
 
-        String hashed = passwordUtil.hashPassword(password);
+        String hashed = PasswordUtil.hashPassword(password);
         User user = new User(email, hashed, fullName, role);
         userRepository.save(user);
 
-        // Fetch saved user to get generated ID
         User saved = userRepository.findByEmail(email);
         String token = JwtUtil.generateToken(saved.getId(), saved.getEmail(), saved.getRole());
 
@@ -50,7 +46,7 @@ public class AuthService {
         if (password == null || password.isBlank()) throw new IllegalArgumentException("Password is required");
 
         User user = userRepository.findByEmail(email);
-        if (user == null || !passwordUtil.verifyPassword(password, user.getPasswordHash())) {
+        if (user == null || !PasswordUtil.checkPassword(password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
 
@@ -87,7 +83,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email);
         if (user == null) throw new IllegalArgumentException("User not found");
 
-        String hashed = passwordUtil.hashPassword(newPassword);
+        String hashed = PasswordUtil.hashPassword(newPassword);
         userRepository.updatePassword(user.getId(), hashed);
 
         resetTokens.remove(resetToken);

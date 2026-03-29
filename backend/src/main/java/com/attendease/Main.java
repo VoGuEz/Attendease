@@ -6,8 +6,6 @@ import com.attendease.handlers.CourseHandler;
 import com.attendease.handlers.SessionHandler;
 import com.attendease.repositories.UserRepository;
 import com.attendease.services.AuthService;
-import com.attendease.utils.JwtUtil;
-import com.attendease.utils.PasswordUtil;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -22,15 +20,11 @@ public class Main {
     public static void main(String[] args) throws Exception {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
-        // Database connection
         String dbUrl = System.getenv("DATABASE_URL");
         Connection conn = DriverManager.getConnection(dbUrl);
 
-        // Wire up dependencies
         UserRepository userRepository = new UserRepository(conn);
-        JwtUtil jwtUtil = new JwtUtil();
-        PasswordUtil passwordUtil = new PasswordUtil();
-        AuthService authService = new AuthService(userRepository, jwtUtil, passwordUtil);
+        AuthService authService = new AuthService(userRepository, null, null);
 
         AuthHandler authHandler = new AuthHandler(authService, userRepository);
         CourseHandler courseHandler = new CourseHandler();

@@ -18,10 +18,11 @@ import java.util.stream.Collectors;
 public class AuthHandler {
 
     private final AuthService authService;
-    private final UserRepository userRepository = new UserRepository();
+    private final UserRepository userRepository;
 
-    public AuthHandler(AuthService authService) {
+    public AuthHandler(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     public void handleRegister(HttpExchange exchange) throws IOException {

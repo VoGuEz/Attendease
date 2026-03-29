@@ -9,20 +9,22 @@ import java.sql.Time;
 import java.util.List;
 
 public class SessionService {
+    private final SessionRepository sessionRepository;
 
-    private final SessionRepository sessionRepository = new SessionRepository();
+    public SessionService(SessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
+    }
 
     public Session createSession(int courseId, String date, String startTime, String endTime) throws SQLException {
         if (date == null || date.isBlank()) throw new IllegalArgumentException("Session date is required");
         if (startTime == null || startTime.isBlank()) throw new IllegalArgumentException("Start time is required");
         if (endTime == null || endTime.isBlank()) throw new IllegalArgumentException("End time is required");
-
         Session session = new Session(
-                courseId,
-                Date.valueOf(date),
-                Time.valueOf(startTime.length() == 5 ? startTime + ":00" : startTime),
-                Time.valueOf(endTime.length() == 5 ? endTime + ":00" : endTime),
-                "upcoming"
+            courseId,
+            Date.valueOf(date),
+            Time.valueOf(startTime.length() == 5 ? startTime + ":00" : startTime),
+            Time.valueOf(endTime.length() == 5 ? endTime + ":00" : endTime),
+            "upcoming"
         );
         return sessionRepository.save(session);
     }
@@ -32,9 +34,8 @@ public class SessionService {
     }
 
     public void updateStatus(int sessionId, String status) throws SQLException {
-        if (!List.of("upcoming", "active", "completed").contains(status)) {
-            throw new IllegalArgumentException("Invalid status. Must be upcoming, active, or completed");
-        }
+        if (!List.of("upcoming", "active", "completed").contains(status))
+            throw new IllegalArgumentException("Invalid status");
         sessionRepository.updateStatus(sessionId, status);
     }
 
@@ -56,9 +57,9 @@ public class SessionService {
         if (startTime == null || startTime.isBlank()) throw new IllegalArgumentException("Start time is required");
         if (endTime == null || endTime.isBlank()) throw new IllegalArgumentException("End time is required");
         sessionRepository.update(sessionId,
-                Date.valueOf(date),
-                Time.valueOf(startTime.length() == 5 ? startTime + ":00" : startTime),
-                Time.valueOf(endTime.length() == 5 ? endTime + ":00" : endTime));
+            Date.valueOf(date),
+            Time.valueOf(startTime.length() == 5 ? startTime + ":00" : startTime),
+            Time.valueOf(endTime.length() == 5 ? endTime + ":00" : endTime));
         return sessionRepository.findById(sessionId).orElseThrow(() -> new IllegalArgumentException("Session not found"));
     }
 

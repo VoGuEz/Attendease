@@ -1,7 +1,7 @@
 package com.attendease.repositories;
 
-import com.attendease.config.DatabaseConfig;
 import com.attendease.models.Session;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,9 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 public class SessionRepository {
+    private final HikariDataSource dataSource;
+
+    public SessionRepository(HikariDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     private Connection getConnection() throws SQLException {
-        return DatabaseConfig.getInstance().getConnection();
+        return dataSource.getConnection();
     }
 
     public Session save(Session session) throws SQLException {
@@ -25,45 +30,30 @@ public class SessionRepository {
             stmt.setString(5, session.getStatus() != null ? session.getStatus() : "upcoming");
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                session.setId(rs.getInt(1));
-            }
+            if (rs.next()) session.setId(rs.getInt(1));
         }
         return session;
     }
 
     public Optional<Session> findById(int id) throws SQLException {
-        String sql = """
-            SELECT s.*, c.course_name FROM sessions s
-            JOIN courses c ON s.course_id = c.id
-            WHERE s.id = ?
-            """;
+        String sql = "SELECT s.*, c.course_name FROM sessions s JOIN courses c ON s.course_id = c.id WHERE s.id = ?";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return Optional.of(mapRow(rs));
-            }
+            if (rs.next()) return Optional.of(mapRow(rs));
         }
         return Optional.empty();
     }
 
     public List<Session> findByCourseId(int courseId) throws SQLException {
-        String sql = """
-            SELECT s.*, c.course_name FROM sessions s
-            JOIN courses c ON s.course_id = c.id
-            WHERE s.course_id = ?
-            ORDER BY s.session_date DESC, s.start_time DESC
-            """;
+        String sql = "SELECT s.*, c.course_name FROM sessions s JOIN courses c ON s.course_id = c.id WHERE s.course_id = ? ORDER BY s.session_date DESC, s.start_time DESC";
         List<Session> sessions = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, courseId);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                sessions.add(mapRow(rs));
-            }
+            while (rs.next()) sessions.add(mapRow(rs));
         }
         return sessions;
     }
@@ -79,19 +69,12 @@ public class SessionRepository {
     }
 
     public List<Session> findActiveSessions() throws SQLException {
-        String sql = """
-            SELECT s.*, c.course_name FROM sessions s
-            JOIN courses c ON s.course_id = c.id
-            WHERE s.status = 'active'
-            ORDER BY s.session_date DESC
-            """;
+        String sql = "SELECT s.*, c.course_name FROM sessions s JOIN courses c ON s.course_id = c.id WHERE s.status = 'active' ORDER BY s.session_date DESC";
         List<Session> sessions = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                sessions.add(mapRow(rs));
-            }
+            while (rs.next()) sessions.add(mapRow(rs));
         }
         return sessions;
     }
@@ -109,9 +92,7 @@ public class SessionRepository {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, studentId);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                sessions.add(mapRow(rs));
-            }
+            while (rs.next()) sessions.add(mapRow(rs));
         }
         return sessions;
     }
@@ -146,16 +127,7 @@ public class SessionRepository {
         session.setEndTime(rs.getTime("end_time"));
         session.setStatus(rs.getString("status"));
         session.setCreatedAt(rs.getTimestamp("created_at"));
-        if (hasColumn(rs, "course_name")) session.setCourseName(rs.getString("course_name"));
+        try { session.setCourseName(rs.getString("course_name")); } catch (SQLException ignored) {}
         return session;
-    }
-
-    private boolean hasColumn(ResultSet rs, String columnName) {
-        try {
-            rs.findColumn(columnName);
-            return true;
-        } catch (SQLException e) {
-            return false;
-        }
     }
 }

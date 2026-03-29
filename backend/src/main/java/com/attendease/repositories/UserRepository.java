@@ -1,23 +1,23 @@
 package com.attendease.repositories;
 
 import com.attendease.models.User;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
-    private final Connection conn;
+    private final HikariDataSource dataSource;
 
-    public UserRepository(Connection conn) {
-        this.conn = conn;
+    public UserRepository(HikariDataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public void save(User user) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO users (email, password_hash, full_name, role) VALUES (?, ?, ?, ?)"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO users (email, password_hash, full_name, role) VALUES (?, ?, ?, ?)")) {
             stmt.setString(1, user.getEmail());
             stmt.setString(2, user.getPasswordHash());
             stmt.setString(3, user.getFullName());
@@ -29,15 +29,11 @@ public class UserRepository {
     }
 
     public User findByEmail(String email) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT * FROM users WHERE email = ?"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE email = ?")) {
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapRow(rs);
-            }
+            if (rs.next()) return mapRow(rs);
             return null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -45,15 +41,11 @@ public class UserRepository {
     }
 
     public User findById(int id) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT * FROM users WHERE id = ?"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE id = ?")) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapRow(rs);
-            }
+            if (rs.next()) return mapRow(rs);
             return null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -61,10 +53,8 @@ public class UserRepository {
     }
 
     public boolean updateFullName(int id, String fullName) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE users SET full_name = ? WHERE id = ?"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("UPDATE users SET full_name = ? WHERE id = ?")) {
             stmt.setString(1, fullName);
             stmt.setInt(2, id);
             return stmt.executeUpdate() > 0;
@@ -74,10 +64,8 @@ public class UserRepository {
     }
 
     public boolean updatePassword(int id, String passwordHash) {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE users SET password_hash = ? WHERE id = ?"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("UPDATE users SET password_hash = ? WHERE id = ?")) {
             stmt.setString(1, passwordHash);
             stmt.setInt(2, id);
             return stmt.executeUpdate() > 0;
@@ -87,15 +75,11 @@ public class UserRepository {
     }
 
     public List<User> findAllStudents() {
-        try {
-            PreparedStatement stmt = conn.prepareStatement(
-                "SELECT * FROM users WHERE role = 'student'"
-            );
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM users WHERE role = 'student'")) {
             ResultSet rs = stmt.executeQuery();
             List<User> students = new ArrayList<>();
-            while (rs.next()) {
-                students.add(mapRow(rs));
-            }
+            while (rs.next()) students.add(mapRow(rs));
             return students;
         } catch (SQLException e) {
             throw new RuntimeException(e);

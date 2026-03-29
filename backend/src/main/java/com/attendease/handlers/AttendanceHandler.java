@@ -13,63 +13,45 @@ import java.util.List;
 import java.util.Map;
 
 public class AttendanceHandler {
+    private final AttendanceService attendanceService;
 
-    private final AttendanceService attendanceService = new AttendanceService();
+    public AttendanceHandler(AttendanceService attendanceService) {
+        this.attendanceService = attendanceService;
+    }
 
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-        String token = JwtUtil.extractTokenFromHeader(authHeader);
-        if (token == null) {
-            ResponseUtil.sendError(exchange, 401, "Unauthorized");
-            return;
-        }
+        String token = JwtUtil.extractTokenFromHeader(exchange.getRequestHeaders().getFirst("Authorization"));
+        if (token == null) { ResponseUtil.sendError(exchange, 401, "Unauthorized"); return; }
 
         try {
             int userId = JwtUtil.getUserId(token);
             String role = JwtUtil.getRole(token);
 
-            // POST /api/attendance/join
             if (method.equals("POST") && path.equals("/api/attendance/join")) {
-                if (!"student".equals(role)) {
-                    ResponseUtil.sendError(exchange, 403, "Only students can join sessions");
-                    return;
-                }
+                if (!"student".equals(role)) { ResponseUtil.sendError(exchange, 403, "Only students can join sessions"); return; }
                 String body = ResponseUtil.readBody(exchange);
                 JsonObject json = JsonParser.parseString(body).getAsJsonObject();
                 int sessionId = json.get("sessionId").getAsInt();
-                String fullName = json.has("fullName") && !json.get("fullName").isJsonNull()
-                    ? json.get("fullName").getAsString() : null;
-                String indexNumber = json.has("indexNumber") && !json.get("indexNumber").isJsonNull()
-                    ? json.get("indexNumber").getAsString() : null;
-                String level = json.has("level") && !json.get("level").isJsonNull()
-                    ? json.get("level").getAsString() : null;
-                Double latitude = json.has("latitude") && !json.get("latitude").isJsonNull()
-                    ? json.get("latitude").getAsDouble() : null;
-                Double longitude = json.has("longitude") && !json.get("longitude").isJsonNull()
-                    ? json.get("longitude").getAsDouble() : null;
-                Map<String, Object> result = attendanceService.joinSession(
-                    userId, sessionId, fullName, indexNumber, level, latitude, longitude
-                );
+                String fullName = getStr(json, "fullName");
+                String indexNumber = getStr(json, "indexNumber");
+                String level = getStr(json, "level");
+                Double latitude = json.has("latitude") && !json.get("latitude").isJsonNull() ? json.get("latitude").getAsDouble() : null;
+                Double longitude = json.has("longitude") && !json.get("longitude").isJsonNull() ? json.get("longitude").getAsDouble() : null;
+                Map<String, Object> result = attendanceService.joinSession(userId, sessionId, fullName, indexNumber, level, latitude, longitude);
                 ResponseUtil.sendResponse(exchange, 200, result);
                 return;
             }
 
-            // GET /api/attendance/stats
             if (method.equals("GET") && path.equals("/api/attendance/stats")) {
-                Map<String, Object> stats = attendanceService.getStudentStats(userId);
-                ResponseUtil.sendResponse(exchange, 200, stats);
+                ResponseUtil.sendResponse(exchange, 200, attendanceService.getStudentStats(userId));
                 return;
             }
 
-            // GET /api/attendance/session/{id}
             if (method.equals("GET") && path.matches("/api/attendance/session/\\d+")) {
-                if (!"lecturer".equals(role)) {
-                    ResponseUtil.sendError(exchange, 403, "Forbidden");
-                    return;
-                }
+                if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Forbidden"); return; }
                 int sessionId = Integer.parseInt(path.substring("/api/attendance/session/".length()));
                 List<Attendance> list = attendanceService.getAttendanceForSession(sessionId);
                 ResponseUtil.sendResponse(exchange, 200, list);
@@ -82,5 +64,10 @@ public class AttendanceHandler {
         } catch (Exception e) {
             ResponseUtil.sendError(exchange, 500, "Internal server error: " + e.getMessage());
         }
+    }
+
+    private String getStr(JsonObject json, String key) {
+        if (json.has(key) && !json.get(key).isJsonNull()) return json.get(key).getAsString();
+        return null;
     }
 }

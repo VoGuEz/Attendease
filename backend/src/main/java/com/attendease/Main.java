@@ -4,133 +4,92 @@ import com.attendease.handlers.AttendanceHandler;
 import com.attendease.handlers.AuthHandler;
 import com.attendease.handlers.CourseHandler;
 import com.attendease.handlers.SessionHandler;
+import com.attendease.repositories.AttendanceRepository;
+import com.attendease.repositories.CourseRepository;
+import com.attendease.repositories.SessionRepository;
 import com.attendease.repositories.UserRepository;
+import com.attendease.services.AttendanceService;
 import com.attendease.services.AuthService;
-import com.attendease.services.EmailService;
-import com.attendease.services.JwtTokenProvider; 
+import com.attendease.services.CourseService;
+import com.attendease.services.SessionService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.concurrent.Executors;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        // 1. Get the Port from Railway
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
-        // 2. Database Connection setup
-        String dbUrl = System.getenv("DATABASE_URL");
-        
-        if (dbUrl == null || dbUrl.isEmpty()) {
-            System.err.println("FATAL ERROR: DATABASE_URL is not set in Railway variables!");
-            System.exit(1); 
+        String dbHost     = System.getenv("DB_HOST");
+        String dbPort     = System.getenv().getOrDefault("DB_PORT", "3306");
+        String dbName     = System.getenv("DB_NAME");
+        String dbUser     = System.getenv("DB_USER");
+        String dbPassword = System.getenv("DB_PASSWORD");
+
+        if (dbHost == null || dbName == null || dbUser == null) {
+            System.err.println("FATAL: DB_HOST, DB_NAME, or DB_USER not set!");
+            System.exit(1);
         }
 
-        if (!dbUrl.startsWith("jdbc:")) {
-            dbUrl = "jdbc:" + dbUrl;
+        // HikariCP connection pool
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?useSSL=true&serverTimezone=UTC");
+        config.setUsername(dbUser);
+        config.setPassword(dbPassword);
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setIdleTimeout(30000);
+        config.setConnectionTimeout(30000);
+        config.setMaxLifetime(1800000);
+        config.setKeepaliveTime(60000);
+        config.setConnectionTestQuery("SELECT 1");
+
+        HikariDataSource dataSource = new HikariDataSource(config);
+
+        try (Connection testConn = dataSource.getConnection()) {
+            System.out.println("[Main] Database connected successfully!");
         }
 
-        // 3. Load MySQL Driver
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("MySQL Driver not found in classpath!");
-            e.printStackTrace();
-        }
+        // Repositories
+        UserRepository       userRepository       = new UserRepository(dataSource);
+        CourseRepository     courseRepository     = new CourseRepository(dataSource);
+        SessionRepository    sessionRepository    = new SessionRepository(dataSource);
+        AttendanceRepository attendanceRepository = new AttendanceRepository(dataSource);
 
-        // 4. Establish Connection
-        Connection conn = DriverManager.getConnection(dbUrl);
-        System.out.println("Successfully connected to the database!");
+        // Services
+        AuthService       authService       = new AuthService(userRepository, null, null);
+        CourseService     courseService     = new CourseService(courseRepository);
+        SessionService    sessionService    = new SessionService(sessionRepository);
+        AttendanceService attendanceService = new AttendanceService(attendanceRepository, sessionRepository);
 
-        // 5. Initialize Services
-        UserRepository userRepository = new UserRepository(conn);
-        
-        // Initialize Email Service for password resets
-        EmailService emailService = new EmailService(); 
-        
-        // Initialize the modern JWT Token Provider for logins
-        JwtTokenProvider tokenProvider = new JwtTokenProvider();
-        
-        // 6. Initialize AuthService with all dependencies
-        // Parameter 1: User Database
-        // Parameter 2: Email engine
-        // Parameter 3: Security Token engine (replaces 'null')
-        AuthService authService = new AuthService(userRepository, emailService, tokenProvider);
+        // Handlers
+        AuthHandler       authHandler       = new AuthHandler(authService, userRepository);
+        CourseHandler     courseHandler     = new CourseHandler(courseService, sessionService);
+        SessionHandler    sessionHandler    = new SessionHandler(sessionService);
+        AttendanceHandler attendanceHandler = new AttendanceHandler(attendanceService);
 
-        // 7. Initialize Handlers
-        AuthHandler authHandler = new AuthHandler(authService, userRepository);
-        CourseHandler courseHandler = new CourseHandler();
-        SessionHandler sessionHandler = new SessionHandler();
-        AttendanceHandler attendanceHandler = new AttendanceHandler();
-
-        // 8. Start the Server
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
-        // --- AUTH ROUTES ---
-        server.createContext("/api/auth/register", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleRegister(exchange);
-        });
-
-        server.createContext("/api/auth/login", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleLogin(exchange);
-        });
-
-        server.createContext("/api/auth/update-name", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleUpdateName(exchange);
-        });
-
-        server.createContext("/api/auth/request-reset", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleRequestReset(exchange);
-        });
-
-        server.createContext("/api/auth/reset-password", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleResetPassword(exchange);
-        });
-
-        // --- DATA ROUTES ---
-        server.createContext("/api/students", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            authHandler.handleGetStudents(exchange);
-        });
-
-        server.createContext("/api/courses", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            courseHandler.handle(exchange);
-        });
-
-        server.createContext("/api/sessions", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            sessionHandler.handle(exchange);
-        });
-
-        server.createContext("/api/attendance", exchange -> {
-            addCorsHeaders(exchange);
-            if (handlePreflight(exchange)) return;
-            attendanceHandler.handle(exchange);
-        });
+        server.createContext("/api/auth/register",     e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRegister(e); });
+        server.createContext("/api/auth/login",        e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleLogin(e); });
+        server.createContext("/api/auth/update-name",  e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleUpdateName(e); });
+        server.createContext("/api/auth/request-reset",e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleRequestReset(e); });
+        server.createContext("/api/auth/reset-password",e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleResetPassword(e); });
+        server.createContext("/api/students",          e -> { addCorsHeaders(e); if (!handlePreflight(e)) authHandler.handleGetStudents(e); });
+        server.createContext("/api/courses",           e -> { addCorsHeaders(e); if (!handlePreflight(e)) courseHandler.handle(e); });
+        server.createContext("/api/sessions",          e -> { addCorsHeaders(e); if (!handlePreflight(e)) sessionHandler.handle(e); });
+        server.createContext("/api/attendance",        e -> { addCorsHeaders(e); if (!handlePreflight(e)) attendanceHandler.handle(e); });
 
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
-        System.out.println("AttendEase server started on port " + port);
-        System.out.println("Systems Check: DB Connected, Email Active, JWT Active.");
+        System.out.println("[Main] AttendEase server started on port " + port);
     }
 
     static void addCorsHeaders(HttpExchange exchange) {

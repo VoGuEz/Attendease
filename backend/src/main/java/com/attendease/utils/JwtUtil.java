@@ -10,10 +10,8 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    // Secret is read from the ATTENDEASE_JWT_SECRET environment variable, with a
-    // development fallback. Set this variable in production to a secure random value.
     private static final String SECRET = System.getenv().getOrDefault(
-            "ATTENDEASE_JWT_SECRET", "attendease-secret-key-2024-xxxxxxxxxxxxxxxx");
+            "JWT_SECRET", "attendease-secret-key-2024-xxxxxxxxxxxxxxxx");
     private static final SecretKey KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     private static final long EXPIRATION_MS = 86400000L; // 24 hours
 

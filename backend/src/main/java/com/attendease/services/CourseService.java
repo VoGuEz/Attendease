@@ -9,32 +9,27 @@ import java.util.List;
 import java.util.Map;
 
 public class CourseService {
+    private final CourseRepository courseRepository;
 
-    private final CourseRepository courseRepository = new CourseRepository();
+    public CourseService(CourseRepository courseRepository) {
+        this.courseRepository = courseRepository;
+    }
 
     public Course createCourse(int lecturerId, String name, String code, String description) throws SQLException {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Course name is required");
         if (code == null || code.isBlank()) throw new IllegalArgumentException("Course code is required");
-
         Course course = new Course(lecturerId, name.trim(), code.trim().toUpperCase(), description != null ? description.trim() : "");
         return courseRepository.save(course);
     }
 
     public List<Course> getCoursesForLecturer(int lecturerId) throws SQLException {
-        List<Course> courses = courseRepository.findByLecturerId(lecturerId);
-        for (Course c : courses) {
-            courseRepository.countEnrolledStudents(c.getId()); // call for side effects if needed
-            c.setDescription(c.getDescription() != null ? c.getDescription() : "");
-        }
-        return courses;
+        return courseRepository.findByLecturerId(lecturerId);
     }
 
     public Map<String, Object> getCoursesForStudent(int studentId) throws SQLException {
         List<Course> enrolled = courseRepository.findAllEnrolledByStudent(studentId);
         List<Course> all = courseRepository.findAll();
-
         all.removeIf(c -> enrolled.stream().anyMatch(e -> e.getId() == c.getId()));
-
         Map<String, Object> result = new HashMap<>();
         result.put("enrolled", enrolled);
         result.put("available", all);

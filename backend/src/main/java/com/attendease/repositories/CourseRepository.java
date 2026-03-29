@@ -1,7 +1,7 @@
 package com.attendease.repositories;
 
-import com.attendease.config.DatabaseConfig;
 import com.attendease.models.Course;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,9 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 public class CourseRepository {
+    private final HikariDataSource dataSource;
+
+    public CourseRepository(HikariDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     private Connection getConnection() throws SQLException {
-        return DatabaseConfig.getInstance().getConnection();
+        return dataSource.getConnection();
     }
 
     public Course save(Course course) throws SQLException {
@@ -24,9 +29,7 @@ public class CourseRepository {
             stmt.setString(4, course.getDescription());
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                course.setId(rs.getInt(1));
-            }
+            if (rs.next()) course.setId(rs.getInt(1));
         }
         return course;
     }
@@ -37,9 +40,7 @@ public class CourseRepository {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return Optional.of(mapRow(rs));
-            }
+            if (rs.next()) return Optional.of(mapRow(rs));
         }
         return Optional.empty();
     }
@@ -51,9 +52,7 @@ public class CourseRepository {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, lecturerId);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                courses.add(mapRow(rs));
-            }
+            while (rs.next()) courses.add(mapRow(rs));
         }
         return courses;
     }
@@ -72,9 +71,7 @@ public class CourseRepository {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, studentId);
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                courses.add(mapRow(rs));
-            }
+            while (rs.next()) courses.add(mapRow(rs));
         }
         return courses;
     }
@@ -95,9 +92,7 @@ public class CourseRepository {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                courses.add(mapRow(rs));
-            }
+            while (rs.next()) courses.add(mapRow(rs));
         }
         return courses;
     }
@@ -153,16 +148,7 @@ public class CourseRepository {
         course.setCourseCode(rs.getString("course_code"));
         course.setDescription(rs.getString("description"));
         course.setCreatedAt(rs.getTimestamp("created_at"));
-        if (hasColumn(rs, "lecturer_name")) course.setLecturerName(rs.getString("lecturer_name"));
+        try { course.setLecturerName(rs.getString("lecturer_name")); } catch (SQLException ignored) {}
         return course;
-    }
-
-    private boolean hasColumn(ResultSet rs, String columnName) {
-        try {
-            rs.findColumn(columnName);
-            return true;
-        } catch (SQLException e) {
-            return false;
-        }
     }
 }

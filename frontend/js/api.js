@@ -30,20 +30,34 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
   const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
 
-  const response = await fetch(`${API_BASE}${endpoint}`, options);
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    
+    // Check for 401 (Unauthorized)
+    if (response.status === 401) {
+      clearAuth();
+      window.location.href = 'index.html';
+      throw new Error('Session expired. Please log in again.');
+    }
 
-  if (response.status === 401) {
-    clearAuth();
-    window.location.href = 'index.html';
-    throw new Error('Session expired. Please log in again.');
+    const data = await response.json();
+
+    if (!response.ok) {
+      // FIX: If the error message mentions JWT or Signature, it's a broken token.
+      // We must clear it, otherwise the user is stuck in an error loop.
+      if (data.message && (data.message.includes('JWT') || data.message.includes('signature'))) {
+        console.warn("Invalid JWT detected. Clearing session...");
+        clearAuth();
+        window.location.href = 'index.html';
+      }
+      throw new Error(data.message || 'Request failed');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("API Request Error:", error);
+    throw error;
   }
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Request failed');
-  }
-  return data;
 }
 
 function requireAuth() {

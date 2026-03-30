@@ -142,12 +142,6 @@ function copyCode(code) {
   navigator.clipboard.writeText(code).then(() => showToast('Session code copied!', 'success'));
 }
 
-function buildCodeSlot(sessionId) {
-  return `<div id="session-code-${sessionId}" style="margin-bottom:4px;">
-    <span style="font-size:12px;color:var(--text-secondary);">Loading code…</span>
-  </div>`;
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
   currentUser = requireRole('lecturer');
   if (!currentUser) return;

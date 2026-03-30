@@ -4,7 +4,7 @@ let activeSection = 'overview';
 let lastAttendanceData = null;
 let sidebarOpen = false;
 let countdownInterval = null;
-const autoEndedSessions = new Set(); // tracks sessions already auto-ended to avoid duplicate calls
+const autoEndedSessions = new Set();
 
 // ===== Utility: Date/Time Formatting =====
 function formatDate(dateStr) {
@@ -116,7 +116,15 @@ function animateCount(el, target) {
   requestAnimationFrame(tick);
 }
 
-// ===== Session Code: fetch and inject into card =====
+// ===== Session Code =====
+
+// Builds a placeholder div that gets filled by loadAndShowCode()
+function buildCodeSlot(sessionId) {
+  return `<div id="session-code-${sessionId}" style="margin-bottom:4px;">
+    <span style="font-size:12px;color:var(--text-secondary);">Loading code…</span>
+  </div>`;
+}
+
 async function loadAndShowCode(sessionId) {
   const el = document.getElementById(`session-code-${sessionId}`);
   if (!el) return;
@@ -830,19 +838,15 @@ function updateAllCountdowns() {
       ring.classList.remove('warning');
       ring.classList.add('danger');
 
-      // Auto-end the session if not already done
       if (sessionId && !autoEndedSessions.has(sessionId)) {
         autoEndedSessions.add(sessionId);
         console.log(`[Countdown] Session ${sessionId} timer reached 0 — auto-ending.`);
         apiRequest(`/sessions/${sessionId}/status`, 'PUT', { status: 'completed' })
           .then(() => {
             showToast('Session ended automatically — time is up.', 'success');
-            // Reload dashboard and switch to sessions tab so completed session is visible
             loadAll().then(() => showSection('sessions'));
           })
-          .catch(err => {
-            console.error(`[Countdown] Failed to auto-end session ${sessionId}:`, err);
-          });
+          .catch(err => console.error(`[Countdown] Failed to auto-end session ${sessionId}:`, err));
       }
       return;
     }

@@ -38,8 +38,9 @@ public class SessionService {
     }
 
     /**
-     * Updates session status. When going active, generates a 6-digit code,
-     * saves it, and emails it to all enrolled students.
+     * Updates session status. When going active, generates a 6-digit code
+     * and saves it. The lecturer reads the code out to students in class —
+     * no email is sent.
      */
     public void updateStatus(int sessionId, String status) throws SQLException {
         if (!List.of("upcoming", "active", "completed").contains(status))
@@ -50,17 +51,7 @@ public class SessionService {
         if ("active".equals(status)) {
             String code = String.format("%06d", random.nextInt(1000000));
             sessionRepository.saveCode(sessionId, code);
-
-            Session session = sessionRepository.findById(sessionId).orElse(null);
-            String courseName = session != null && session.getCourseName() != null
-                ? session.getCourseName() : "your class";
-
-            List<String> emails = sessionRepository.findEnrolledStudentEmails(sessionId);
-            for (String email : emails) {
-                emailService.sendSessionCode(email, courseName, code);
-            }
-
-            System.out.println("[SessionService] Session " + sessionId + " activated. Code: " + code + " — emailed " + emails.size() + " students");
+            System.out.println("[SessionService] Session " + sessionId + " activated. Code: " + code);
         }
     }
 

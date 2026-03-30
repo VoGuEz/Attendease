@@ -4,6 +4,7 @@ let activeSection = 'overview';
 let lastAttendanceData = null;
 let sidebarOpen = false;
 let countdownInterval = null;
+const autoEndedSessions = new Set(); // tracks sessions already auto-ended to avoid duplicate calls
 
 // ===== Utility: Date/Time Formatting =====
 function formatDate(dateStr) {
@@ -141,7 +142,6 @@ function copyCode(code) {
   navigator.clipboard.writeText(code).then(() => showToast('Session code copied!', 'success'));
 }
 
-// Builds a placeholder div that gets filled by loadAndShowCode()
 function buildCodeSlot(sessionId) {
   return `<div id="session-code-${sessionId}" style="margin-bottom:4px;">
     <span style="font-size:12px;color:var(--text-secondary);">Loading code…</span>
@@ -233,7 +233,6 @@ async function loadAll() {
   renderSkeletonCards(document.getElementById('courses-list'));
   renderSkeletonCards(document.getElementById('active-sessions-list'), 2);
   renderSkeletonCards(document.getElementById('overview-sessions-list'), 2);
-
   await Promise.all([loadCourses(), loadActiveSessions(), loadStudents()]);
   await loadLecturerSessionsPanels();
   updateStats();
@@ -640,14 +639,14 @@ async function handleCreateSession(e) {
 }
 
 async function changeStatus(sessionId, status, btn) {
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     await apiRequest(`/sessions/${sessionId}/status`, 'PUT', { status });
-    showToast(`Session ${status === 'active' ? 'is now live! Code sent to students.' : 'ended.'}`, 'success');
+    showToast(`Session ${status === 'active' ? 'is now live!' : 'ended.'}`, 'success');
     await loadAll();
   } catch (err) {
     showToast(err.message, 'error');
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -823,22 +822,43 @@ function updateAllCountdowns() {
   document.querySelectorAll('[data-countdown]').forEach(el => {
     const endStr = el.dataset.end;
     const startStr = el.dataset.start;
+    const sessionId = parseInt(el.dataset.sessionId);
     if (!endStr || !startStr) return;
+
     const now = new Date(), end = new Date(endStr), start = new Date(startStr);
     const remaining = end - now;
     const ring = el.querySelector('.ring-progress');
     const label = el.querySelector('.countdown-time');
+
     if (remaining <= 0) {
       label.textContent = '0:00';
       ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE;
-      ring.classList.remove('warning'); ring.classList.add('danger');
+      ring.classList.remove('warning');
+      ring.classList.add('danger');
+
+      // Auto-end the session if not already done
+      if (sessionId && !autoEndedSessions.has(sessionId)) {
+        autoEndedSessions.add(sessionId);
+        console.log(`[Countdown] Session ${sessionId} timer reached 0 — auto-ending.`);
+        apiRequest(`/sessions/${sessionId}/status`, 'PUT', { status: 'completed' })
+          .then(() => {
+            showToast('Session ended automatically — time is up.', 'success');
+            // Reload dashboard and switch to sessions tab so completed session is visible
+            loadAll().then(() => showSection('sessions'));
+          })
+          .catch(err => {
+            console.error(`[Countdown] Failed to auto-end session ${sessionId}:`, err);
+          });
+      }
       return;
     }
+
     const fraction = Math.max(0, Math.min(1, remaining / (end - start)));
     ring.style.strokeDashoffset = COUNTDOWN_CIRCUMFERENCE * (1 - fraction);
     ring.classList.remove('warning', 'danger');
     if (fraction <= 0.15) ring.classList.add('danger');
     else if (fraction <= 0.35) ring.classList.add('warning');
+
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
     label.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;

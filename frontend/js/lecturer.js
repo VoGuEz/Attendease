@@ -116,14 +116,6 @@ function animateCount(el, target) {
   requestAnimationFrame(tick);
 }
 
-// ===== Session Code =====
-
-// Builds a placeholder div that gets filled by loadAndShowCode()
-function buildCodeSlot(sessionId) {
-  return `<div id="session-code-${sessionId}" style="margin-bottom:4px;">
-    <span style="font-size:12px;color:var(--text-secondary);">Loading code…</span>
-  </div>`;
-}
 
 async function loadAndShowCode(sessionId) {
   const el = document.getElementById(`session-code-${sessionId}`);

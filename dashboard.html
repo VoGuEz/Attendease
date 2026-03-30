@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – AttendEase</title>
+  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="icon" type="image/png" href="images/logo.png" />
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: var(--bg-primary, #121212);
+      color: var(--text-primary, #ffffff);
+      overflow: hidden;
+    }
+
+    #wallpaper-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .welcome-card {
+      background: var(--bg-card, rgba(30, 30, 30, 0.9));
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 24px;
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color, #333);
+      position: relative;
+      z-index: 10;
+    }
+
+    .welcome-logo-img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      object-fit: contain;
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    #go-dashboard-btn {
+      justify-content: center;
+      padding: 14px;
+      font-weight: 600;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    #go-dashboard-btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    .btn-student  { background-color: #008c9e !important; }
+    .btn-lecturer { background-color: #2938b8 !important; }
+
+    .theme-switcher-corner {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="wallpaper-container"></div>
+  <div class="theme-switcher-corner" id="theme-switcher-container"></div>
+
+  <div class="dashboard-welcome">
+    <div class="welcome-card">
+      <img src="images/logo.png" alt="AttendEase Logo" class="welcome-logo-img" />
+      <h1 style="margin-bottom: 8px;">AttendEase</h1>
+      <p id="welcome-msg" style="color: var(--text-secondary); margin-bottom: 20px;">Welcome back!</p>
+
+      <div style="margin-bottom: 24px;">
+        <span class="badge" id="role-badge" style="font-size: 14px; padding: 8px 20px;"></span>
+      </div>
+
+      <div class="welcome-actions">
+        <button class="btn" id="go-dashboard-btn" style="display:none"></button>
+        <button class="btn btn-outline btn-danger" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js?v=2"></script>
+  <script src="js/themes.js?v=3"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // 1. APPLY THEME — use correct key matching themes.js
+      if (typeof applyTheme === 'function') {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        applyTheme(savedTheme);
+      }
+
+      // 2. APPLY WALLPAPER — use correct key matching themes.js
+      if (typeof applyWallpaper === 'function') {
+        const savedWallpaper = localStorage.getItem('wallpaper') || 'none';
+        applyWallpaper(savedWallpaper);
+      }
+
+      // 3. RENDER THEME SWITCHER UI
+      if (typeof renderThemeSwitcher === 'function') {
+        renderThemeSwitcher('theme-switcher-container');
+      }
+
+      // 4. AUTH & ROLE LOGIC
+      const user = requireAuth();
+      if (user) {
+        document.getElementById('welcome-msg').textContent = `Welcome back, ${user.fullName || 'User'}!`;
+
+        const badge = document.getElementById('role-badge');
+        const btn   = document.getElementById('go-dashboard-btn');
+
+        btn.style.display = 'flex';
+
+        if (user.role === 'student') {
+          badge.textContent = '🎓 Student';
+          badge.className   = 'badge badge-active';
+          btn.textContent   = '🎓 Student Dashboard →';
+          btn.classList.add('btn-student');
+        } else {
+          badge.textContent = '👨‍🏫 Lecturer';
+          badge.className   = 'badge badge-upcoming';
+          btn.textContent   = '👨‍🏫 Lecturer Dashboard →';
+          btn.classList.add('btn-lecturer');
+        }
+
+        btn.addEventListener('click', () => {
+          window.location.href = user.role === 'student' ? 'student.html' : 'lecturer.html';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

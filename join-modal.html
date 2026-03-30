@@ -1,0 +1,72 @@
+<!-- Replace the entire modal-join-session div in your student dashboard HTML with this -->
+
+<div class="modal-overlay" id="modal-join-session">
+  <div class="modal" style="max-width: 520px; width: calc(100% - 32px);">
+    <div class="modal-header">
+      <h3>Join Session</h3>
+      <button class="modal-close" type="button" onclick="closeJoinModal()">&times;</button>
+    </div>
+
+    <!-- Shared hidden fields -->
+    <input type="hidden" id="join-session-id" />
+    <input type="hidden" id="join-session-code-confirmed" />
+
+    <!-- STEP 1: Code Entry -->
+    <div id="join-code-step">
+      <p style="font-size:14px; color:var(--text-secondary); margin-bottom:16px;">
+        Enter the 6-digit session code sent to your email by your lecturer.
+      </p>
+      <div style="display:grid; gap:14px;">
+        <div>
+          <label for="join-session-code" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Session Code</label>
+          <input type="text" id="join-session-code" maxlength="6" pattern="\d{6}" placeholder="e.g. 284719"
+            autocomplete="one-time-code"
+            style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+                   background:var(--bg-secondary); color:var(--text); font-size:20px;
+                   letter-spacing:6px; text-align:center;" />
+        </div>
+        <p id="join-code-msg" style="display:none; font-size:13px; margin:0;"></p>
+      </div>
+      <div class="modal-footer" style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-sm btn-outline" type="button" onclick="closeJoinModal()">Cancel</button>
+        <button class="btn btn-sm btn-success" type="button" id="validate-code-btn" onclick="validateAndProceed()">Verify Code</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Attendance Details (shown after code verified) -->
+    <div id="join-details-step" style="display:none;">
+      <form id="join-session-form">
+        <div style="display:grid; gap:14px;">
+          <div>
+            <label for="join-full-name" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Full Name</label>
+            <input type="text" id="join-full-name" required
+              style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text);" />
+          </div>
+          <div>
+            <label for="join-index-number" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Index Number</label>
+            <input type="text" id="join-index-number" required
+              style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text);" />
+          </div>
+          <div>
+            <label for="join-level" style="display:block; margin-bottom:6px; font-size:14px; color:var(--text-secondary);">Level</label>
+            <input type="text" id="join-level" placeholder="e.g. 100, 200, 300" required
+              style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-secondary); color:var(--text);" />
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
+              <label style="font-size:14px; color:var(--text-secondary);">GPS Location</label>
+              <button class="btn btn-sm btn-outline" type="button" id="capture-location-btn">Capture Location</button>
+            </div>
+            <div class="location-chip" id="join-location-status">Location not captured yet.</div>
+          </div>
+          <p id="join-session-msg" style="display:none; font-size:13px; margin:0;"></p>
+        </div>
+        <div class="modal-footer" style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn btn-sm btn-outline" type="button" onclick="closeJoinModal()">Cancel</button>
+          <button class="btn btn-sm btn-success" type="submit" id="join-session-submit-btn">Join Session</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>

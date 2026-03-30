@@ -77,10 +77,11 @@ public class SessionService {
     }
 
     /**
-     * Returns the session code for a session (lecturer view only).
+     * Returns the session code only if the lecturer owns the session.
+     * Returns null if the session doesn't belong to them.
      */
-    public String getSessionCode(int sessionId) throws SQLException {
-        return sessionRepository.getCode(sessionId);
+    public String getSessionCodeForLecturer(int sessionId, int lecturerId) throws SQLException {
+        return sessionRepository.getCodeForLecturer(sessionId, lecturerId);
     }
 
     public Session updateSession(int sessionId, String date, String startTime, String endTime) throws SQLException {

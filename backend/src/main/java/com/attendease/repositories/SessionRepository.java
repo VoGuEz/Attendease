@@ -68,6 +68,20 @@ public class SessionRepository {
         }
     }
 
+   
+    public int endExpiredSessions() throws SQLException {
+        String sql = """
+            UPDATE sessions
+            SET status = 'completed'
+            WHERE status = 'active'
+              AND TIMESTAMP(session_date, end_time) < NOW()
+            """;
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            return stmt.executeUpdate();
+        }
+    }
+
     /**
      * Saves a 6-digit session code when a session goes active.
      */
@@ -81,9 +95,7 @@ public class SessionRepository {
         }
     }
 
-    /**
-     * Returns true if the code matches an active session.
-     */
+
     public boolean validateCode(int sessionId, String code) throws SQLException {
         String sql = "SELECT 1 FROM sessions WHERE id = ? AND session_code = ? AND status = 'active'";
         try (Connection conn = getConnection();
@@ -95,23 +107,22 @@ public class SessionRepository {
         }
     }
 
-    /**
-     * Returns the session code (for displaying to the lecturer).
-     */
-    public String getCode(int sessionId) throws SQLException {
-        String sql = "SELECT session_code FROM sessions WHERE id = ?";
+    public String getCodeForLecturer(int sessionId, int lecturerId) throws SQLException {
+        String sql = """
+            SELECT s.session_code FROM sessions s
+            JOIN courses c ON s.course_id = c.id
+            WHERE s.id = ? AND c.lecturer_id = ?
+            """;
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, sessionId);
+            stmt.setInt(2, lecturerId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) return rs.getString("session_code");
         }
         return null;
     }
 
-    /**
-     * Returns emails of all students enrolled in the course of a given session.
-     */
     public List<String> findEnrolledStudentEmails(int sessionId) throws SQLException {
         String sql = """
             SELECT u.email FROM users u
@@ -179,13 +190,9 @@ public class SessionRepository {
         }
     }
 
-    /**
-     * Checks whether a session belongs to a specific lecturer.
-     */
     public boolean isOwnedByLecturer(int sessionId, int lecturerId) throws SQLException {
         String sql = """
-            SELECT 1
-            FROM sessions s
+            SELECT 1 FROM sessions s
             JOIN courses c ON s.course_id = c.id
             WHERE s.id = ? AND c.lecturer_id = ?
             """;

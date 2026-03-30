@@ -30,6 +30,20 @@ public class SessionHandler {
             int userId = JwtUtil.getUserId(token);
             String role = JwtUtil.getRole(token);
 
+            // GET /api/sessions/{id}/code — lecturer fetches their own session code
+            if (method.equals("GET") && path.matches("/api/sessions/\\d+/code")) {
+                if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Forbidden"); return; }
+                int sessionId = extractId(path, "/api/sessions/", "/code");
+                String code = sessionService.getSessionCodeForLecturer(sessionId, userId);
+                if (code == null) {
+                    ResponseUtil.sendError(exchange, 403, "Access denied or session has no code yet");
+                    return;
+                }
+                ResponseUtil.sendResponse(exchange, 200, Map.of("code", code));
+                return;
+            }
+
+            // PUT /api/sessions/{id}/status — update session status
             if (method.equals("PUT") && path.matches("/api/sessions/\\d+/status")) {
                 if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Forbidden"); return; }
                 int sessionId = extractId(path, "/api/sessions/", "/status");
@@ -41,6 +55,7 @@ public class SessionHandler {
                 return;
             }
 
+            // GET /api/sessions/active
             if (method.equals("GET") && path.equals("/api/sessions/active")) {
                 List<Session> sessions = "student".equals(role)
                     ? sessionService.getActiveSessionsForStudent(userId)
@@ -49,6 +64,7 @@ public class SessionHandler {
                 return;
             }
 
+            // POST /api/sessions — create session
             if (method.equals("POST") && path.equals("/api/sessions")) {
                 if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Only lecturers can create sessions"); return; }
                 String body = ResponseUtil.readBody(exchange);
@@ -59,7 +75,8 @@ public class SessionHandler {
                 return;
             }
 
-            if (method.equals("PUT") && path.matches("/api/sessions/\\d+") && !path.contains("/status")) {
+            // PUT /api/sessions/{id} — edit session details
+            if (method.equals("PUT") && path.matches("/api/sessions/\\d+") && !path.contains("/status") && !path.contains("/code")) {
                 if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Only lecturers can edit sessions"); return; }
                 int sessionId = Integer.parseInt(path.substring("/api/sessions/".length()));
                 String body = ResponseUtil.readBody(exchange);
@@ -69,6 +86,7 @@ public class SessionHandler {
                 return;
             }
 
+            // DELETE /api/sessions/{id}
             if (method.equals("DELETE") && path.matches("/api/sessions/\\d+")) {
                 if (!"lecturer".equals(role)) { ResponseUtil.sendError(exchange, 403, "Only lecturers can delete sessions"); return; }
                 int sessionId = Integer.parseInt(path.substring("/api/sessions/".length()));

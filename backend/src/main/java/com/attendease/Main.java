@@ -12,6 +12,7 @@ import com.attendease.services.AttendanceService;
 import com.attendease.services.AuthService;
 import com.attendease.services.CourseService;
 import com.attendease.services.EmailService;
+import com.attendease.services.SessionScheduler;
 import com.attendease.services.SessionService;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -63,12 +64,16 @@ public class Main {
         SessionRepository    sessionRepository    = new SessionRepository(dataSource);
         AttendanceRepository attendanceRepository = new AttendanceRepository(dataSource);
 
-        // EmailService shared across AuthService and SessionService
+        // Services
         EmailService      emailService      = new EmailService();
         AuthService       authService       = new AuthService(userRepository, emailService);
         CourseService     courseService     = new CourseService(courseRepository);
         SessionService    sessionService    = new SessionService(sessionRepository, emailService);
         AttendanceService attendanceService = new AttendanceService(attendanceRepository, sessionRepository);
+
+        // Start background scheduler — auto-ends sessions when their end time passes
+        SessionScheduler sessionScheduler = new SessionScheduler(sessionRepository);
+        sessionScheduler.start();
 
         // Handlers
         AuthHandler       authHandler       = new AuthHandler(authService, userRepository);
